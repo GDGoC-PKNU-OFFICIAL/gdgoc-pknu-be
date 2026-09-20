@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gdgoc
+    username: gdgoc
+    password: gdgoc
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
