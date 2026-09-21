@@ -1,0 +1,18 @@
+# 로컬 개발용 PostgreSQL. 실행: docker compose up -d
+# Supabase 프로젝트의 PostgreSQL 메이저 버전과 맞출 것 (Dashboard > Settings > Infrastructure)
+services:
+  postgres:
+    image: postgres:17
+    container_name: gdgoc-pknu-postgres
+    environment:
+      POSTGRES_DB: gdgoc
+      POSTGRES_USER: gdgoc
+      POSTGRES_PASSWORD: gdgoc
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - gdgoc-pknu-pgdata:/var/lib/postgresql/data
+
+volumes:
+  gdgoc-pknu-pgdata:
