@@ -75,6 +75,18 @@ public class Project extends BaseTimeEntity {
                     LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
                     String githubUrl, String demoUrl, List<String> description,
                     List<String> techStack, List<String> features, List<String> outcomes) {
+        updateContent(slug, title, summary, category, periodStart, periodEnd, thumbnailUrl,
+                githubUrl, demoUrl, description, techStack, features, outcomes);
+    }
+
+    /**
+     * PUT 전체 필드 교체(제약 2). 등록(생성자)과 수정이 같은 메서드를 거치게 해 두 경로가 벌어지지 않게 한다.
+     * {@code team}은 별도로 {@link #clearTeam()} 후 {@link #addTeamMember}를 다시 호출해 채운다.
+     */
+    public void updateContent(String slug, String title, String summary, ProjectCategory category,
+                              LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
+                              String githubUrl, String demoUrl, List<String> description,
+                              List<String> techStack, List<String> features, List<String> outcomes) {
         this.slug = slug;
         this.title = title;
         this.summary = summary;
@@ -93,6 +105,11 @@ public class Project extends BaseTimeEntity {
     /** 현재 팀원 뒤에 추가한다. sortOrder는 입력 순서(0부터)로 자동 부여된다. */
     public void addTeamMember(String name, String role) {
         team.add(ProjectTeamMember.of(this, name, role, team.size()));
+    }
+
+    /** `clear()` + `addTeamMember` 반복 = 팀원 전체 교체(5-3). orphanRemoval이 옛 행의 DELETE를 발행한다. */
+    public void clearTeam() {
+        team.clear();
     }
 
     private static List<String> copyOrEmpty(List<String> values) {
