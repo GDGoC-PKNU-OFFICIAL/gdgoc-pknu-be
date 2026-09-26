@@ -14,6 +14,7 @@ import java.util.List;
 /**
  * API 명세서 4-2 ProjectRequest. 등록 · 수정 공통 요청이다(PUT은 전체 필드 교체).
  * 선택 필드라도 배열은 `@NotNull`로 받아 "필드 누락(400)"과 "빈 배열([])"을 구분한다(1-4).
+ * 배열 원소도 `null` · 빈 문자열을 허용하지 않는다 — 통과시키면 저장 · 응답 변환 중 NPE로 500이 된다.
  */
 public record ProjectRequest(
         @NotBlank @Size(max = 40) String title,
@@ -25,11 +26,11 @@ public record ProjectRequest(
         @NotNull ProjectCategory category,
         @NotNull @Valid PeriodRequest period,
         @Pattern(regexp = "^https?://.+", message = "URL 형식이 올바르지 않습니다.") @Size(max = 500) String thumbnailUrl,
-        @NotNull @Size(min = 1, max = 10) List<@Size(max = 1000) String> description,
-        @NotNull @Size(max = 20) List<@Valid TeamMemberRequest> team,
-        @NotNull @Size(max = 10) @NoDuplicates List<@Size(max = 20) String> techStack,
-        @NotNull @Size(max = 10) List<@Size(max = 80) String> features,
-        @NotNull @Size(max = 10) List<@Size(max = 80) String> outcomes,
+        @NotNull @Size(min = 1, max = 10) List<@NotBlank @Size(max = 1000) String> description,
+        @NotNull @Size(max = 20) List<@NotNull @Valid TeamMemberRequest> team,
+        @NotNull @Size(max = 10) @NoDuplicates List<@NotBlank @Size(max = 20) String> techStack,
+        @NotNull @Size(max = 10) List<@NotBlank @Size(max = 80) String> features,
+        @NotNull @Size(max = 10) List<@NotBlank @Size(max = 80) String> outcomes,
         @NotNull @Valid LinksRequest links) {
 
     private static final String YEAR_MONTH_PATTERN = "^\\d{4}\\.(0[1-9]|1[0-2])$";

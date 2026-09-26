@@ -18,10 +18,12 @@ import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.TeamMemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectCategory;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectRepository;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,10 @@ class AdminProjectControllerTest {
     ObjectMapper objectMapper;
     @Autowired
     ProjectRepository projectRepository;
+    @Autowired
+    EntityManager em;
+    @Autowired
+    JdbcTemplate jdbc;
 
     @Test
     void 등록하면_201과_Location_헤더와_저장된_값을_반환한다() throws Exception {
@@ -185,6 +191,75 @@ class AdminProjectControllerTest {
                 .andExpect(jsonPath("$.size").value(1))
                 .andExpect(jsonPath("$.totalItems").value(2))
                 .andExpect(jsonPath("$.totalPages").value(2));
+    }
+
+    @Test
+    void 수정_응답의_updatedAt은_수정_후_값이다() throws Exception {
+        Long id = createAndGetId(request("touch-me"));
+        em.flush();
+        jdbc.update("UPDATE project SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = ?", id);
+        em.clear();
+
+        ProjectRequest update = new ProjectRequest(
+                "바뀐 제목", "touch-me", "부경대 길찾기 웹앱", ProjectCategory.TEAM_PROJECT,
+                new PeriodRequest("2026.03", "2026.06"), null,
+                List.of("소개 문단"), List.of(), List.of(), List.of(), List.of(), new LinksRequest(null, null));
+
+        mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(update)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updatedAt").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.startsWith("2020-"))));
+    }
+
+    @Test
+    void 팀원_배열에_null_원소가_있으면_500이_아니라_400이다() throws Exception {
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(rawBody("null-team", "[null]", "[\"소개\"]", "[]")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='team[0]')]").exists());
+    }
+
+    @Test
+    void 문자열_배열에_빈_값이나_null_원소가_있으면_400이다() throws Exception {
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(rawBody("blank-items", "[]", "[\"\", null]", "[\"  \"]")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='description[0]')]").exists())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='description[1]')]").exists())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='techStack[0]')]").exists());
+    }
+
+    @Test
+    void 문자열은_앞뒤_공백을_제거한_뒤_검사하고_저장한다() throws Exception {
+        String paddedTitle = "  " + "가".repeat(40) + "　 ";   // 공백 제외 40자 = 최대 길이
+        ProjectRequest request = new ProjectRequest(
+                paddedTitle, " trimmed-slug ", " 요약 ", ProjectCategory.OFFICIAL,
+                new PeriodRequest(" 2026.03 ", null), null,
+                List.of(" 소개 "), List.of(new TeamMemberRequest(" 홍길동 ", " 백엔드 ")),
+                List.of(" Spring "), List.of(), List.of(), new LinksRequest(" https://github.com/gdgoc-pknu ", null));
+
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("가".repeat(40)))
+                .andExpect(jsonPath("$.slug").value("trimmed-slug"))
+                .andExpect(jsonPath("$.period.start").value("2026.03"))
+                .andExpect(jsonPath("$.description[0]").value("소개"))
+                .andExpect(jsonPath("$.team[0].name").value("홍길동"))
+                .andExpect(jsonPath("$.techStack[0]").value("Spring"))
+                .andExpect(jsonPath("$.links.github").value("https://github.com/gdgoc-pknu"));
+    }
+
+    /** 원소 단위로 잘못된 배열을 보내기 위해 JSON을 직접 만든다(record로는 null 원소 리스트를 만들기 번거롭다). */
+    private static String rawBody(String slug, String team, String description, String techStack) {
+        return """
+                { "title": "캠퍼스 맵", "slug": "%s", "summary": "요약", "category": "official",
+                  "period": { "start": "2026.03", "end": null }, "thumbnailUrl": null,
+                  "description": %s, "team": %s, "techStack": %s, "features": [], "outcomes": [],
+                  "links": { "github": null, "demo": null } }
+                """.formatted(slug, description, team, techStack);
     }
 
     private Long createAndGetId(ProjectRequest request) throws Exception {
