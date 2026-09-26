@@ -231,6 +231,27 @@ class AdminProjectControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='techStack[0]')]").exists());
     }
 
+    @Test
+    void 문자열은_앞뒤_공백을_제거한_뒤_검사하고_저장한다() throws Exception {
+        String paddedTitle = "  " + "가".repeat(40) + "　 ";   // 공백 제외 40자 = 최대 길이
+        ProjectRequest request = new ProjectRequest(
+                paddedTitle, " trimmed-slug ", " 요약 ", ProjectCategory.OFFICIAL,
+                new PeriodRequest(" 2026.03 ", null), null,
+                List.of(" 소개 "), List.of(new TeamMemberRequest(" 홍길동 ", " 백엔드 ")),
+                List.of(" Spring "), List.of(), List.of(), new LinksRequest(" https://github.com/gdgoc-pknu ", null));
+
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("가".repeat(40)))
+                .andExpect(jsonPath("$.slug").value("trimmed-slug"))
+                .andExpect(jsonPath("$.period.start").value("2026.03"))
+                .andExpect(jsonPath("$.description[0]").value("소개"))
+                .andExpect(jsonPath("$.team[0].name").value("홍길동"))
+                .andExpect(jsonPath("$.techStack[0]").value("Spring"))
+                .andExpect(jsonPath("$.links.github").value("https://github.com/gdgoc-pknu"));
+    }
+
     /** 원소 단위로 잘못된 배열을 보내기 위해 JSON을 직접 만든다(record로는 null 원소 리스트를 만들기 번거롭다). */
     private static String rawBody(String slug, String team, String description, String techStack) {
         return """
