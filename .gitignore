@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local HTTP Client scratch ###
+/src/test/http/

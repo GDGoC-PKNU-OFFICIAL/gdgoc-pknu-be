@@ -6,13 +6,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.sql.SQLException;
 import java.util.List;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -101,6 +105,31 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }
 
+    @Test
+    void 슬러그_UNIQUE_위반은_409_SLUG_DUPLICATED로_변환된다() throws Exception {
+        mockMvc.perform(get("/sample/slug-conflict"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("SLUG_DUPLICATED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("slug"));
+    }
+
+    @Test
+    void 슬러그가_아닌_DB_제약_위반은_스택을_숨기고_500이다() throws Exception {
+        mockMvc.perform(get("/sample/other-conflict"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("ck_member_status_role"))));
+    }
+
+    @Test
+    void 존재하지_않는_enum_코드값은_400과_필드_경로를_반환한다() throws Exception {
+        mockMvc.perform(post("/sample/category").contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"category\": \"invalid\" }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("category"));
+    }
+
     @RestController
     static class SampleController {
 
@@ -122,6 +151,30 @@ class GlobalExceptionHandlerTest {
         void boom() {
             throw new IllegalStateException("boom");
         }
+
+        @GetMapping("/sample/slug-conflict")
+        void slugConflict() {
+            throw new DataIntegrityViolationException("could not execute statement", new ConstraintViolationException(
+                    "could not execute statement",
+                    sqlException("duplicate key value violates unique constraint \"uk_project_slug\""),
+                    "uk_project_slug"));
+        }
+
+        @GetMapping("/sample/other-conflict")
+        void otherConflict() {
+            throw new DataIntegrityViolationException("could not execute statement", new ConstraintViolationException(
+                    "could not execute statement",
+                    sqlException("new row violates check constraint \"ck_member_status_role\""),
+                    "ck_member_status_role"));
+        }
+
+        @PostMapping("/sample/category")
+        void category(@RequestBody CategoryRequest request) {
+        }
+
+        private static SQLException sqlException(String message) {
+            return new SQLException(message);
+        }
     }
 
     record SampleRequest(
@@ -131,5 +184,21 @@ class GlobalExceptionHandlerTest {
     }
 
     record TeamRequest(@NotBlank String name) {
+    }
+
+    record CategoryRequest(SampleCategory category) {
+    }
+
+    enum SampleCategory {
+        A, B;
+
+        @JsonCreator
+        static SampleCategory fromCode(String code) {
+            return switch (code) {
+                case "a" -> A;
+                case "b" -> B;
+                default -> throw new IllegalArgumentException("Unknown category: " + code);
+            };
+        }
     }
 }

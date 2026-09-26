@@ -1,0 +1,6 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        # N+1 회귀 테스트가 실제 SQL 실행 수를 셀 수 있게 한다
+        generate_statistics: true

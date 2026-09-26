@@ -1,8 +1,11 @@
 package com.gdgocpknu.gdgoc_pknu_be.common.error;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorCode code = e.errorCode();
         List<FieldErrorItem> fieldErrors = e.fieldErrors().isEmpty() ? null : e.fieldErrors();
         return ResponseEntity.status(code.status()).body(ErrorResponse.of(code, fieldErrors));
+    }
+
+    /**
+     * DB UNIQUE 제약 위반을 최후 방어선으로 잡는다 (BACK_ARCHITECTURE 5-4).
+     * 서비스가 저장 전에 슬러그 중복을 먼저 검사하므로, 여기 걸리는 것은 동시 저장 같은 경쟁 상황뿐이다.
+     * 슬러그가 아닌 다른 제약 위반은 검증 계층이 막아야 정상이므로 버그로 보고 500을 유지한다.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        String constraint = constraintNameOf(e);
+        if (constraint != null && constraint.contains("slug")) {
+            log.info("Slug uniqueness violated at the database (constraint={})", constraint);
+            ErrorCode code = ErrorCode.SLUG_DUPLICATED;
+            List<FieldErrorItem> fieldErrors = List.of(new FieldErrorItem("slug", code.message()));
+            return ResponseEntity.status(code.status()).body(ErrorResponse.of(code, fieldErrors));
+        }
+        log.error("Unexpected database constraint violation (constraint={})", constraint, e);
+        return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.status()).body(ErrorResponse.of(ErrorCode.INTERNAL_ERROR));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -68,11 +89,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return body(validationFailed(items));
     }
 
-    /** 본문이 없거나 JSON 형식이 깨졌거나 타입이 맞지 않는 경우. */
+    /**
+     * 본문이 없거나 JSON 형식이 깨진 경우, 또는 값 하나가 타입·enum과 맞지 않는 경우(예: category에
+     * 정의되지 않은 코드값). 후자는 Jackson이 필드 경로를 들고 있으므로 최대한 살려서 fieldErrors에 담는다.
+     */
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return body(validationFailed(List.of()));
+        return body(validationFailed(fieldErrorsFrom(ex.getCause())));
     }
 
     /**
@@ -109,5 +133,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static String lastNode(String propertyPath) {
         int dot = propertyPath.lastIndexOf('.');
         return dot < 0 ? propertyPath : propertyPath.substring(dot + 1);
+    }
+
+    /** Hibernate가 PostgreSQL 에러 메시지에서 뽑아낸 제약 이름(예: `uk_project_slug`). 못 찾으면 null. */
+    private static String constraintNameOf(DataIntegrityViolationException e) {
+        if (e.getCause() instanceof org.hibernate.exception.ConstraintViolationException cve) {
+            return cve.getConstraintName();
+        }
+        return null;
+    }
+
+    /** Jackson이 역직렬화 중 기록해 둔 경로(`team[0].role` 등)를 fieldErrors로 옮긴다. 경로가 없으면 빈 리스트. */
+    private static List<FieldErrorItem> fieldErrorsFrom(Throwable cause) {
+        if (!(cause instanceof JsonMappingException jme) || jme.getPath().isEmpty()) {
+            return List.of();
+        }
+        String field = jme.getPath().stream().map(GlobalExceptionHandler::pathSegment).collect(Collectors.joining());
+        field = field.startsWith(".") ? field.substring(1) : field;
+        return field.isBlank() ? List.of() : List.of(new FieldErrorItem(field, "허용되지 않는 값입니다."));
+    }
+
+    private static String pathSegment(JsonMappingException.Reference ref) {
+        return ref.getFieldName() != null ? "." + ref.getFieldName() : "[" + ref.getIndex() + "]";
     }
 }
