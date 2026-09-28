@@ -67,6 +67,8 @@ public class ProjectCommandService {
         project.clearTeam();
         applyTeam(project, request.team());
 
+        // updatedAt(@LastModifiedDate)은 flush 시점에 채워지므로, 응답을 만들기 전에 flush해야 새 값이 나간다.
+        projectRepository.flush();
         return projectMapper.toResponse(project);
     }
 
