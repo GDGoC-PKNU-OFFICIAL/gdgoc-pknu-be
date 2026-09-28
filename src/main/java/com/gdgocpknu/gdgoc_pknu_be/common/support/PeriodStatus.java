@@ -7,7 +7,7 @@ import java.time.LocalDate;
  * 프로젝트 · 스터디의 현재/과거 구분. 저장하지 않고 조회 시 계산한다 (API 명세서 1-4).
  * 목록 필터의 SQL 조건(`period_end IS NULL OR period_end >= 이번 달 1일`)과 같은 규칙이어야 한다.
  */
-public enum PeriodStatus {
+public enum PeriodStatus implements CodedEnum {
 
     CURRENT("current"),
     PAST("past");
@@ -18,6 +18,7 @@ public enum PeriodStatus {
         this.code = code;
     }
 
+    @Override
     @JsonValue
     public String code() {
         return code;

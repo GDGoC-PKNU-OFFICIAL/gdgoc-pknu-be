@@ -24,6 +24,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Spring 컨텍스트 · DB 없이 에러 응답 모양(명세 1-7)만 검증한다. */
@@ -130,8 +131,21 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("category"));
     }
 
+    @Test
+    void 쿼리_파라미터_타입이_맞지_않으면_400과_파라미터_이름을_반환한다() throws Exception {
+        mockMvc.perform(get("/sample/year").param("year", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("year"))
+                .andExpect(jsonPath("$.fieldErrors[0].message").value("허용되지 않는 값입니다."));
+    }
+
     @RestController
     static class SampleController {
+
+        @GetMapping("/sample/year")
+        void year(@RequestParam int year) {
+        }
 
         @PostMapping("/sample")
         void create(@Valid @RequestBody SampleRequest request) {
