@@ -2,8 +2,11 @@ package com.gdgocpknu.gdgoc_pknu_be.project.controller;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.PageResponse;
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.SlugCheckResponse;
+import com.gdgocpknu.gdgoc_pknu_be.common.support.PeriodStatus;
+import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectCategory;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectResponse;
+import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectSearchCond;
 import com.gdgocpknu.gdgoc_pknu_be.project.service.ProjectCommandService;
 import com.gdgocpknu.gdgoc_pknu_be.project.service.ProjectQueryService;
 import jakarta.validation.Valid;
@@ -24,10 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 관리자 CRUD(A-11 ~ A-13). `q`·`status`·`category`·`year`·`sort` 동적 조건은 다음 조각에서 추가하고,
- * 지금은 목록 조회가 페이징만 지원한다.
- */
+/** 관리자 CRUD(A-11 ~ A-13). */
 @Validated
 @RestController
 @RequestMapping("/api/admin/projects")
@@ -37,11 +37,21 @@ public class AdminProjectController {
     private final ProjectQueryService projectQueryService;
     private final ProjectCommandService projectCommandService;
 
+    /**
+     * `status` · `category`는 코드값(`past`, `team-project`)으로 받는다. `sort`는 `필드,방향` 형식이며
+     * 허용 필드는 `periodStart` · `title` · `updatedAt` (API 명세서 1-6, 2-4).
+     */
     @GetMapping
     public PageResponse<ProjectResponse> list(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) PeriodStatus status,
+            @RequestParam(required = false) ProjectCategory category,
+            @RequestParam(required = false) @Positive @Max(9999) Integer year,
             @RequestParam(defaultValue = "0") @PositiveOrZero int page,
-            @RequestParam(defaultValue = "20") @Positive @Max(200) int size) {
-        return projectQueryService.findAllForAdmin(page, size);
+            @RequestParam(defaultValue = "20") @Positive @Max(200) int size,
+            @RequestParam(defaultValue = "periodStart,desc") String sort) {
+        ProjectSearchCond cond = new ProjectSearchCond(q, status, category, year);
+        return projectQueryService.findAllForAdmin(cond, page, size, sort);
     }
 
     @GetMapping("/{id:\\d+}")

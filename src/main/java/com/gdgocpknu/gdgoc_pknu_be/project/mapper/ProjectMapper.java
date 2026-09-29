@@ -27,7 +27,8 @@ public class ProjectMapper {
         return projects.stream().map(project -> toResponse(project, firstDayOfThisMonth)).toList();
     }
 
-    private ProjectResponse toResponse(Project project, LocalDate firstDayOfThisMonth) {
+    /** 조회 조건(status 필터)과 응답의 status가 같은 기준일을 쓰도록, 기준일을 이미 계산한 호출자가 넘긴다. */
+    public ProjectResponse toResponse(Project project, LocalDate firstDayOfThisMonth) {
         LocalDate periodEnd = project.getPeriodEnd();
         return new ProjectResponse(
                 project.getId(),

@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -100,7 +101,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * 그 밖의 프레임워크 예외(404 매핑 없음, 405, 415, 쿼리 파라미터 누락 · 타입 불일치 등)도 공통 모양으로 내보낸다.
+     * 쿼리 파라미터 · 경로 변수의 타입이 맞지 않는 경우(예: `?year=abc`, 정의되지 않은 코드값 `?status=done`).
+     * 어느 파라미터가 틀렸는지 프론트가 알 수 있도록 파라미터 이름을 fieldErrors에 담는다.
+     */
+    @Override
+    protected ResponseEntity<Object> handleTypeMismatch(
+            TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String name = ex.getPropertyName();
+        List<FieldErrorItem> items = name == null ? List.of() : List.of(new FieldErrorItem(name, "허용되지 않는 값입니다."));
+        return body(validationFailed(items));
+    }
+
+    /**
+     * 그 밖의 프레임워크 예외(404 매핑 없음, 405, 415, 쿼리 파라미터 누락 등)도 공통 모양으로 내보낸다.
      * 명세에 코드가 없는 4xx는 원래 HTTP 상태를 유지하고 VALIDATION_FAILED로 표기한다.
      */
     @Override

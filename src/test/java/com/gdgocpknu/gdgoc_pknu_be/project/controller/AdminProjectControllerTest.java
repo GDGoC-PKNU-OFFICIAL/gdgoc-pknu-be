@@ -125,6 +125,30 @@ class AdminProjectControllerTest {
     }
 
     @Test
+    void 수정_요청에서_필드가_빠지면_400이고_기존_값은_바뀌지_않는다() throws Exception {
+        Long id = createAndGetId(request("put-missing"));
+        // PUT은 전체 필드 교체라 "안 보낸 필드는 그대로 둔다"로 해석하면 안 된다 (명세 1-4). team · links 누락.
+        String bodyWithoutTeamAndLinks = """
+                { "title": "바뀐 제목", "slug": "put-missing", "summary": "요약", "category": "official",
+                  "period": { "start": "2026.03", "end": null }, "thumbnailUrl": null,
+                  "description": ["소개"], "techStack": [], "features": [], "outcomes": [] }
+                """;
+
+        mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(bodyWithoutTeamAndLinks))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='team')]").exists())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='links')]").exists());
+
+        em.flush();
+        em.clear();
+        mockMvc.perform(get("/api/admin/projects/{id}", id).with(user("admin")))
+                .andExpect(jsonPath("$.title").value("캠퍼스 맵"))
+                .andExpect(jsonPath("$.team[0].name").value("홍길동"));
+    }
+
+    @Test
     void 수정_시_다른_프로젝트와_슬러그가_겹치면_409다() throws Exception {
         createAndGetId(request("taken-slug"));
         Long id = createAndGetId(request("editable-slug"));
