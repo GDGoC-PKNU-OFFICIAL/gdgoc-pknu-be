@@ -4,3 +4,8 @@ spring:
       hibernate:
         # N+1 회귀 테스트가 실제 SQL 실행 수를 셀 수 있게 한다
         generate_statistics: true
+
+app:
+  jwt:
+    # 테스트 전용 고정 값. 실제 발급·검증 로직을 그대로 타되 시간은 각 테스트가 Clock으로 고정한다.
+    secret: test-only-jwt-secret-not-used-anywhere-else-32bytes+
