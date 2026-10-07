@@ -8,3 +8,12 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+
+app:
+  jwt:
+    # 로컬 개발 전용 값(HS256은 최소 32바이트 필요). 운영은 반드시 환경변수 JWT_SECRET(Vercel과 동일 값)로 채운다.
+    secret: ${JWT_SECRET:local-dev-only-jwt-secret-please-change-before-deploy}
+  admin-seed:
+    # 로컬에서 별도 설정 없이 바로 로그인해 볼 수 있도록 둔 개발 전용 기본값. 운영에는 이 기본값이 없다.
+    login-id: ${ADMIN_LOGIN_ID:admin}
+    password: ${ADMIN_PASSWORD:local-dev-admin-1234!}

@@ -57,11 +57,14 @@ class AdminProjectControllerTest {
     }
 
     @Test
-    void 인증_없이_등록하면_403이다() throws Exception {
+    void 인증_없이_등록하면_401이다() throws Exception {
+        // STEP3부터 관리자 경로는 JwtAuthenticationEntryPoint가 401 공통 JSON으로 응답한다.
+        // 인증 흐름 자체(만료·위조 포함)는 JwtAuthenticationIntegrationTest가 다룬다.
         mockMvc.perform(post("/api/admin/projects")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(request("no-auth"))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
