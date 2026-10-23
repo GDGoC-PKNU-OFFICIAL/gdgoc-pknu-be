@@ -5,11 +5,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Base64;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Clock을 발급 · 검증에서 각각 고정해, 8시간을 실제로 기다리지 않고 만료를 검증한다. */
 class JwtProviderTest {
@@ -25,6 +29,24 @@ class JwtProviderTest {
 
         assertThat(issued.expiresAt()).isEqualTo(ISSUED_AT.plus(EIGHT_HOURS));
         assertThat(provider.parseSubject(issued.token())).isEqualTo("admin");
+    }
+
+    /**
+     * 명세(PRD 4-3, API 명세서 1-3)는 HS256이다. 알고리즘을 지정하지 않으면 jjwt가 키 길이에 맞춰
+     * HS384(48바이트 이상) · HS512(64바이트 이상)를 자동 선택하므로, 시크릿 길이와 무관하게 HS256인지 확인한다.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {32, 53, 64, 100})
+    void 시크릿_길이와_상관없이_HS256으로_서명한다(int secretBytes) {
+        JwtProvider provider = new JwtProvider(
+                new JwtProperties("k".repeat(secretBytes), 8), Clock.fixed(ISSUED_AT, ZoneOffset.UTC));
+
+        String token = provider.issue("admin").token();
+
+        String header = new String(
+                Base64.getUrlDecoder().decode(token.substring(0, token.indexOf('.'))), StandardCharsets.UTF_8);
+        assertThat(header).contains("\"alg\":\"HS256\"");
+        assertThat(provider.parseSubject(token)).isEqualTo("admin");
     }
 
     @Test

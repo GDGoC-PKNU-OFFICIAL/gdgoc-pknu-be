@@ -35,7 +35,9 @@ public class JwtProvider {
                 .subject(subject)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
-                .signWith(key)
+                // 알고리즘을 생략하면 jjwt가 키 길이에 맞춰 HS384 · HS512를 고른다. 명세는 HS256이고
+                // 프론트(jose)가 같은 알고리즘으로 검증하므로, 시크릿 길이와 무관하게 HS256으로 고정한다.
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
         return new IssuedToken(token, expiresAt);
     }
