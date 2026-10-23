@@ -9,6 +9,7 @@ import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.TeamMemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectResponse;
 import com.gdgocpknu.gdgoc_pknu_be.project.mapper.ProjectMapper;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class ProjectCommandService {
     private final ProjectRepository projectRepository;
     private final ProjectQueryService projectQueryService;
     private final ProjectMapper projectMapper;
+    private final Clock clock;
 
     public ProjectResponse create(ProjectRequest request) {
         requireSlugAvailable(request.slug(), null);
@@ -66,6 +68,8 @@ public class ProjectCommandService {
                 request.description(), request.techStack(), request.features(), request.outcomes());
         project.clearTeam();
         applyTeam(project, request.team());
+        // 팀원만 바뀐 수정은 project 행이 dirty하지 않아 auditing이 updatedAt을 갱신하지 않는다.
+        project.touch(clock.instant());
 
         // updatedAt(@LastModifiedDate)은 flush 시점에 채워지므로, 응답을 만들기 전에 flush해야 새 값이 나간다.
         projectRepository.flush();

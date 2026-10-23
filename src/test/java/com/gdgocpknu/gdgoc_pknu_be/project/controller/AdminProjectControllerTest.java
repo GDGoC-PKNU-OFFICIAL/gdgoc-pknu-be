@@ -239,6 +239,27 @@ class AdminProjectControllerTest {
     }
 
     @Test
+    void 팀원만_바꿔도_updatedAt이_갱신된다() throws Exception {
+        Long id = createAndGetId(request("team-only"));
+        em.flush();
+        jdbc.update("UPDATE project SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = ?", id);
+        em.clear();
+
+        ProjectRequest update = new ProjectRequest(
+                "캠퍼스 맵", "team-only", "부경대 길찾기 웹앱", ProjectCategory.TEAM_PROJECT,
+                new PeriodRequest("2026.03", "2026.06"), null,
+                List.of("소개 문단"), List.of(new TeamMemberRequest("김부경", "프론트엔드")),
+                List.of("Next.js", "Spring Boot"), List.of(), List.of(),
+                new LinksRequest("https://github.com/gdgoc-pknu/team-only", null));
+
+        mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(update)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.team[0].name").value("김부경"))
+                .andExpect(jsonPath("$.updatedAt").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.startsWith("2020-"))));
+    }
+
+    @Test
     void 팀원_배열에_null_원소가_있으면_500이_아니라_400이다() throws Exception {
         mockMvc.perform(post("/api/admin/projects").with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(rawBody("null-team", "[null]", "[\"소개\"]", "[]")))
