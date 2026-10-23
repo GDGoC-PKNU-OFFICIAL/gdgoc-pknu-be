@@ -22,4 +22,12 @@ public abstract class BaseTimeEntity {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    /**
+     * 자식 컬렉션(`mappedBy`)만 바뀐 수정은 부모 행이 dirty하지 않아 `@LastModifiedDate`가 동작하지 않는다.
+     * 그런 수정에서 부모의 수정 시각을 직접 갱신한다.
+     */
+    public void touch(Instant now) {
+        this.updatedAt = now;
+    }
 }
