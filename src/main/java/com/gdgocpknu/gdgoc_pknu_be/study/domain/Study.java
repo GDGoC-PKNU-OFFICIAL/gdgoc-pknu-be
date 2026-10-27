@@ -75,7 +75,8 @@ public class Study extends BaseTimeEntity {
         this.periodStart = periodStart;
         this.periodEnd = periodEnd;
         this.leader = leader;
-        this.format = format;
+        // 폼의 빈 입력("")은 "값 없음"이다. null로 저장해야 응답에서 생략된다(non_null은 빈 문자열을 남긴다).
+        this.format = (format == null || format.isBlank()) ? null : format;
     }
 
     public void addParticipant(String name) {

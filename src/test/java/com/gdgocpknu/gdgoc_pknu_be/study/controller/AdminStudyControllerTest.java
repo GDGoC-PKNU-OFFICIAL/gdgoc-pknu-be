@@ -314,6 +314,25 @@ class AdminStudyControllerTest {
                 .andExpect(jsonPath("$.outputs[0].url").value("https://velog.io/@gdgoc"));
     }
 
+    @Test
+    void format을_빈_문자열이나_공백으로_보내면_null로_저장되고_응답에서_생략된다() throws Exception {
+        StudyRequest blank = new StudyRequest(
+                "스프링 스터디", "blank-format", "요약", "Backend",
+                new PeriodRequest("2026.03", null), "홍길동", List.of(), "   ", List.of());
+        Long id = createAndGetId(blank);
+
+        StudyRequest empty = new StudyRequest(
+                "스프링 스터디", "blank-format", "요약", "Backend",
+                new PeriodRequest("2026.03", null), "홍길동", List.of(), "", List.of());
+        mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(empty)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.format").doesNotExist());
+
+        em.flush();
+        assertThat(jdbc.queryForObject("SELECT format FROM study WHERE id = ?", String.class, id)).isNull();
+    }
+
     /** 원소 단위로 잘못된 배열을 보내기 위해 JSON을 직접 만든다(record로는 null 원소 리스트를 만들기 번거롭다). */
     private static String rawBody(String slug, String participants, String outputs) {
         return """
