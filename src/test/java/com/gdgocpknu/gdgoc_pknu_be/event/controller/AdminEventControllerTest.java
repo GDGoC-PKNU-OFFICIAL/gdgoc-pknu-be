@@ -249,6 +249,20 @@ class AdminEventControllerTest {
     }
 
     @Test
+    void 내용이_같은_수정도_updatedAt을_갱신한다() throws Exception {
+        Long id = createAndGetId(request("세미나", DAY));
+        em.flush();
+        jdbc.update("UPDATE event SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = ?", id);
+        em.clear();
+
+        mockMvc.perform(put("/api/admin/events/{id}", id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(request("세미나", DAY))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updatedAt").value(not(startsWith("2020-"))));
+        assertThat(updatedAtOf(id)).doesNotStartWith("2020-");
+    }
+
+    @Test
     void 삭제하면_204고_같은_날짜의_남은_순서는_그대로다() throws Exception {
         Long first = createAndGetId(request("첫째", DAY));
         Long second = createAndGetId(request("둘째", DAY));
@@ -296,6 +310,22 @@ class AdminEventControllerTest {
         em.clear();
 
         assertThat(List.of(sortOrderOf(c), sortOrderOf(a))).containsExactly(0, 1);
+    }
+
+    @Test
+    void 순서_변경은_updatedAt을_바꾸지_않는다() throws Exception {
+        Long a = createAndGetId(request("A", DAY));
+        Long b = createAndGetId(request("B", DAY));
+        em.flush();
+        jdbc.update("UPDATE event SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE start_date = ?", DAY);
+        em.clear();
+
+        reorder(new EventOrderRequest(DAY, List.of(b, a))).andExpect(status().isNoContent());
+        em.flush();
+
+        // 순서 변경은 내용 수정이 아니다. 갱신하면 대시보드 "최근 수정"(명세 3-6)이 순서 변경만으로 채워진다.
+        assertThat(List.of(sortOrderOf(b), sortOrderOf(a))).containsExactly(0, 1);
+        assertThat(List.of(updatedAtOf(a), updatedAtOf(b))).allMatch(at -> at.startsWith("2020-"));
     }
 
     @Test
@@ -364,6 +394,13 @@ class AdminEventControllerTest {
 
     private int sortOrderOf(Long id) {
         return jdbc.queryForObject("SELECT sort_order FROM event WHERE id = ?", Integer.class, id);
+    }
+
+    /** KST 기준 문자열(`2020-01-01 00:00:00`)로 읽어 세션 시간대와 무관하게 비교한다. */
+    private String updatedAtOf(Long id) {
+        return jdbc.queryForObject(
+                "SELECT to_char(updated_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI:SS') FROM event WHERE id = ?",
+                String.class, id);
     }
 
     private String json(Object request) throws Exception {
