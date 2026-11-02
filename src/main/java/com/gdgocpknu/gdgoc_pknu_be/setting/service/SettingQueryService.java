@@ -23,6 +23,13 @@ public class SettingQueryService {
         return settingMapper.toResponse(getOrThrow());
     }
 
+    /** 대시보드용. 설정 행이 없으면 모집 중이 아닌 것으로 본다 — 이 값 하나로 대시보드 전체가 404가 되면 안 된다. */
+    public boolean isRecruiting() {
+        return siteSettingRepository.findById(SiteSetting.SINGLETON_ID)
+                .map(SiteSetting::isRecruiting)
+                .orElse(false);
+    }
+
     SiteSetting getOrThrow() {
         return siteSettingRepository.findById(SiteSetting.SINGLETON_ID)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
