@@ -17,3 +17,10 @@ app:
     # 로컬에서 별도 설정 없이 바로 로그인해 볼 수 있도록 둔 개발 전용 기본값. 운영에는 이 기본값이 없다.
     login-id: ${ADMIN_LOGIN_ID:admin}
     password: ${ADMIN_PASSWORD:local-dev-admin-1234!}
+  r2:
+    # 실제 R2 없이도 앱이 뜨도록 둔 자리표시자다. 업로드를 시험하려면 환경변수로 실제 값을 넣는다.
+    account-id: ${R2_ACCOUNT_ID:local-account}
+    access-key: ${R2_ACCESS_KEY:local-access-key}
+    secret-key: ${R2_SECRET_KEY:local-secret-key}
+    bucket: ${R2_BUCKET:local-bucket}
+    public-base-url: ${R2_PUBLIC_BASE_URL:https://local-bucket.r2.dev}
