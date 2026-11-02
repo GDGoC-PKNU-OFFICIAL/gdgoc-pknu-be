@@ -7,7 +7,10 @@ import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRepository;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.AdminMemberResponse;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.member.mapper.MemberMapper;
+import com.gdgocpknu.gdgoc_pknu_be.storage.UploadTarget;
+import com.gdgocpknu.gdgoc_pknu_be.storage.service.UploadVerifier;
 import java.time.Clock;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +27,12 @@ public class MemberCommandService {
     private final MemberRepository memberRepository;
     private final MemberQueryService memberQueryService;
     private final MemberMapper memberMapper;
+    private final UploadVerifier uploadVerifier;
     private final Clock clock;
 
     public AdminMemberResponse create(MemberRequest request) {
+        verifyPhotoIfNew(request.photoUrl(), null);
+
         Member member = Member.builder()
                 .status(request.status())
                 .role(request.role())
@@ -48,6 +54,7 @@ public class MemberCommandService {
     /** 전체 필드 교체. 시니어로 전환하면 `role`이 `null`이어야 하며 요청 검증이 먼저 막는다. */
     public AdminMemberResponse update(Long id, MemberRequest request) {
         Member member = memberQueryService.getOrThrow(id);
+        verifyPhotoIfNew(request.photoUrl(), member.getPhotoUrl());
 
         member.updateContent(
                 request.status(), request.role(), request.name(), request.photoUrl(), request.department(),
@@ -66,5 +73,12 @@ public class MemberCommandService {
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
         memberRepository.deleteById(id);
+    }
+
+    /** 값이 새로 들어오거나 바뀐 경우에만 R2를 확인한다(명세 2-9). */
+    private void verifyPhotoIfNew(String requested, String current) {
+        if (requested != null && !Objects.equals(requested, current)) {
+            uploadVerifier.verify(requested, UploadTarget.MEMBER);
+        }
     }
 }
