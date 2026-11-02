@@ -27,6 +27,14 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation platform('software.amazon.awssdk:bom:2.57.8')
+    // 무료 티어 메모리를 아끼려고 기본 HTTP 클라이언트(Apache · Netty) 대신 JDK 기반 클라이언트만 쓴다.
+    implementation('software.amazon.awssdk:s3') {
+        exclude group: 'software.amazon.awssdk', module: 'apache-client'
+        exclude group: 'software.amazon.awssdk', module: 'apache5-client'
+        exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
+    }
+    implementation 'software.amazon.awssdk:url-connection-client'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'

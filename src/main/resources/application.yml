@@ -35,3 +35,10 @@ app:
     # 회원가입 API가 없다(PRD 4-3). 비어 있으면 AdminAccountSeeder가 계정을 만들지 않고 경고만 남긴다.
     login-id: ${ADMIN_LOGIN_ID:}
     password: ${ADMIN_PASSWORD:}
+  r2:
+    # JWT_SECRET과 같은 규칙이다. 운영에서 값이 없으면 기동이 실패한다 — 재검증 없이 저장되는 일을 막는다.
+    account-id: ${R2_ACCOUNT_ID}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    bucket: ${R2_BUCKET}
+    public-base-url: ${R2_PUBLIC_BASE_URL}

@@ -9,9 +9,12 @@ import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.TeamMemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectResponse;
 import com.gdgocpknu.gdgoc_pknu_be.project.mapper.ProjectMapper;
+import com.gdgocpknu.gdgoc_pknu_be.storage.UploadTarget;
+import com.gdgocpknu.gdgoc_pknu_be.storage.service.UploadVerifier;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +32,12 @@ public class ProjectCommandService {
     private final ProjectRepository projectRepository;
     private final ProjectQueryService projectQueryService;
     private final ProjectMapper projectMapper;
+    private final UploadVerifier uploadVerifier;
     private final Clock clock;
 
     public ProjectResponse create(ProjectRequest request) {
         requireSlugAvailable(request.slug(), null);
+        verifyThumbnailIfNew(request.thumbnailUrl(), null);
 
         Project project = Project.builder()
                 .slug(request.slug())
@@ -58,6 +63,7 @@ public class ProjectCommandService {
     public ProjectResponse update(Long id, ProjectRequest request) {
         Project project = projectQueryService.getOrThrow(id);
         requireSlugAvailable(request.slug(), id);
+        verifyThumbnailIfNew(request.thumbnailUrl(), project.getThumbnailUrl());
 
         LocalDate periodStart = YearMonthText.parse(request.period().start());
         LocalDate periodEnd = YearMonthText.parse(request.period().end());
@@ -87,6 +93,13 @@ public class ProjectCommandService {
     private void requireSlugAvailable(String slug, Long excludeId) {
         if (!projectQueryService.isSlugAvailable(slug, excludeId)) {
             throw new BusinessException(ErrorCode.SLUG_DUPLICATED, "slug", ErrorCode.SLUG_DUPLICATED.message());
+        }
+    }
+
+    /** 값이 새로 들어오거나 바뀐 경우에만 R2를 확인한다(명세 2-4). 비우는 수정과 그대로 두는 수정은 호출이 없다. */
+    private void verifyThumbnailIfNew(String requested, String current) {
+        if (requested != null && !Objects.equals(requested, current)) {
+            uploadVerifier.verify(requested, UploadTarget.PROJECT);
         }
     }
 

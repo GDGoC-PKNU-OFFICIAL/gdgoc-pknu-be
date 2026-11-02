@@ -1,9 +1,11 @@
 package com.gdgocpknu.gdgoc_pknu_be.project.service;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.PageResponse;
+import com.gdgocpknu.gdgoc_pknu_be.common.dto.RecentUpdate;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.BusinessException;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.ErrorCode;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.KstDates;
+import com.gdgocpknu.gdgoc_pknu_be.common.support.PeriodStatus;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.SortWhitelist;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.Project;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectRepository;
@@ -82,6 +84,16 @@ public class ProjectQueryService {
         return excludeId == null
                 ? !projectRepository.existsBySlug(slug)
                 : !projectRepository.existsBySlugAndIdNot(slug, excludeId);
+    }
+
+    public long countByStatus(PeriodStatus status, LocalDate firstDayOfThisMonth) {
+        return projectRepository.count(ProjectSpecifications.status(status, firstDayOfThisMonth));
+    }
+
+    public List<RecentUpdate> findRecentUpdates() {
+        return projectRepository.findTop5ByOrderByUpdatedAtDescIdDesc().stream()
+                .map(e -> new RecentUpdate("projects", e.getId(), e.getTitle(), e.getUpdatedAt()))
+                .toList();
     }
 
     Project getOrThrow(Long id) {

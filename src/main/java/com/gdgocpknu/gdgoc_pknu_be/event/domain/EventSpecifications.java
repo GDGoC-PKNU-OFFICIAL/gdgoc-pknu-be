@@ -23,6 +23,18 @@ public final class EventSpecifications {
         return (root, query, cb) -> cb.equal(root.get("category"), category);
     }
 
+    /** `(endDate ?? date) >= 오늘` — 진행 중인 일정을 포함한다(명세 3-6). */
+    public static Specification<Event> upcoming(LocalDate today) {
+        return (root, query, cb) -> cb.greaterThanOrEqualTo(
+                cb.coalesce(root.<LocalDate>get("endDate"), root.<LocalDate>get("date")), today);
+    }
+
+    /** {@link #upcoming}의 반대. */
+    public static Specification<Event> past(LocalDate today) {
+        return (root, query, cb) -> cb.lessThan(
+                cb.coalesce(root.<LocalDate>get("endDate"), root.<LocalDate>get("date")), today);
+    }
+
     /** `year` — `date`(시작일)의 연도. `[year-01-01, year+1-01-01)` 범위로 비교한다. */
     public static Specification<Event> dateYear(int year) {
         LocalDate from = LocalDate.of(year, 1, 1);

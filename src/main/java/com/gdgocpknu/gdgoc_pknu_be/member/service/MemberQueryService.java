@@ -1,12 +1,14 @@
 package com.gdgocpknu.gdgoc_pknu_be.member.service;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.PageResponse;
+import com.gdgocpknu.gdgoc_pknu_be.common.dto.RecentUpdate;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.BusinessException;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.ErrorCode;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.SortWhitelist;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.Member;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRepository;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberSpecifications;
+import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.AdminMemberResponse;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberResponse;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberSearchCond;
@@ -76,6 +78,16 @@ public class MemberQueryService {
 
     public AdminMemberResponse getForAdmin(Long id) {
         return memberMapper.toAdminResponse(getOrThrow(id));
+    }
+
+    public long countByStatus(MemberStatus status) {
+        return memberRepository.countByStatus(status);
+    }
+
+    public List<RecentUpdate> findRecentUpdates() {
+        return memberRepository.findTop5ByOrderByUpdatedAtDescIdDesc().stream()
+                .map(e -> new RecentUpdate("members", e.getId(), e.getName(), e.getUpdatedAt()))
+                .toList();
     }
 
     Member getOrThrow(Long id) {

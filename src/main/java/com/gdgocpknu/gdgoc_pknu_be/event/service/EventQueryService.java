@@ -1,6 +1,7 @@
 package com.gdgocpknu.gdgoc_pknu_be.event.service;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.PageResponse;
+import com.gdgocpknu.gdgoc_pknu_be.common.dto.RecentUpdate;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.BusinessException;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.ErrorCode;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.SortWhitelist;
@@ -10,6 +11,7 @@ import com.gdgocpknu.gdgoc_pknu_be.event.domain.EventSpecifications;
 import com.gdgocpknu.gdgoc_pknu_be.event.dto.EventResponse;
 import com.gdgocpknu.gdgoc_pknu_be.event.dto.EventSearchCond;
 import com.gdgocpknu.gdgoc_pknu_be.event.mapper.EventMapper;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -70,6 +72,27 @@ public class EventQueryService {
 
     public EventResponse getForAdmin(Long id) {
         return eventMapper.toResponse(getOrThrow(id));
+    }
+
+    public long countUpcoming(LocalDate today) {
+        return eventRepository.count(EventSpecifications.upcoming(today));
+    }
+
+    public long countPast(LocalDate today) {
+        return eventRepository.count(EventSpecifications.past(today));
+    }
+
+    /** 다가오는 일정(진행 중 포함)을 가까운 순으로. 공개 목록과 같은 순서다. */
+    public List<EventResponse> findUpcoming(LocalDate today, int limit) {
+        return eventMapper.toResponses(eventRepository
+                .findAll(EventSpecifications.upcoming(today), PageRequest.of(0, limit, PUBLIC_ORDER))
+                .getContent());
+    }
+
+    public List<RecentUpdate> findRecentUpdates() {
+        return eventRepository.findTop5ByOrderByUpdatedAtDescIdDesc().stream()
+                .map(e -> new RecentUpdate("events", e.getId(), e.getTitle(), e.getUpdatedAt()))
+                .toList();
     }
 
     Event getOrThrow(Long id) {

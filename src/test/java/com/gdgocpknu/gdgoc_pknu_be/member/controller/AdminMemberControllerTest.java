@@ -21,7 +21,9 @@ import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberRequest.LinksRequest;
+import com.gdgocpknu.gdgoc_pknu_be.support.FakeS3Client;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
 import jakarta.persistence.EntityManager;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -40,6 +42,17 @@ import org.springframework.transaction.annotation.Transactional;
 @IntegrationTest
 @Transactional
 class AdminMemberControllerTest {
+
+    private static final String PHOTO_KEY = "members/8f1c0000-0000-4000-8000-000000000001.webp";
+
+    @Autowired
+    FakeS3Client s3;
+
+    @BeforeEach
+    void registerPhoto() {
+        s3.reset();
+        s3.put(PHOTO_KEY, 1024, "image/webp");
+    }
 
     @Autowired
     MockMvc mockMvc;
@@ -353,7 +366,7 @@ class AdminMemberControllerTest {
 
     private static MemberRequest core(String name) {
         return new MemberRequest(
-                MemberStatus.CORE, MemberRole.PART_LEAD, name, "https://example.r2.dev/members/a.webp", "컴퓨터공학과",
+                MemberStatus.CORE, MemberRole.PART_LEAD, name, "https://test-bucket.r2.dev/" + PHOTO_KEY, "컴퓨터공학과",
                 List.of("2026 파트 리드"), List.of("백엔드", "클라우드"), MemberPart.BACKEND,
                 "함께 만드는 개발자", new LinksRequest("https://github.com/gildong", null), true);
     }
