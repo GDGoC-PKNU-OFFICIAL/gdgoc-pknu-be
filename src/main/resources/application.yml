@@ -24,6 +24,11 @@ server:
   # Render는 PORT 환경변수로 포트를 넘긴다. 로컬은 8080
   port: ${PORT:8080}
 
+logging:
+  pattern:
+    # 기본 패턴의 로그 레벨 자리에 요청 id를 덧붙인다(RequestIdFilter). 요청 밖의 로그는 빈 괄호로 나온다.
+    level: "%5p [%X{requestId:-}]"
+
 management:
   endpoints:
     web:
