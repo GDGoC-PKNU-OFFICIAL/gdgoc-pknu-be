@@ -20,6 +20,10 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+server:
+  # Render는 PORT 환경변수로 포트를 넘긴다. 로컬은 8080
+  port: ${PORT:8080}
+
 management:
   endpoints:
     web:

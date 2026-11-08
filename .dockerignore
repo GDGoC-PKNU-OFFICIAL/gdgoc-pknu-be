@@ -1,0 +1,17 @@
+# 빌드는 이미지 안에서 새로 한다
+build/
+.gradle/
+out/
+bin/
+
+# 키가 담긴 로컬 환경변수 파일이 이미지에 들어가지 않게 한다
+.env*
+
+.git/
+.idea/
+.vscode/
+.claude/
+*.iml
+docs/
+src/test/
+docker-compose.yml
