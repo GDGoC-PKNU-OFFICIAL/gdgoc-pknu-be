@@ -16,7 +16,7 @@ import java.util.List;
  * API 명세서 4-6 MemberRequest. 등록 · 수정 공통 요청이다(PUT은 전체 필드 교체).
  * 배열은 `@NotNull`로 받아 "필드 누락(400)"과 "빈 배열([])"을 구분하고(1-4), 원소의 `null` · 빈 문자열은 막는다.
  * `consentConfirmed`는 저장하지 않는다 — 반드시 `true`여야 한다는 검증용 값이며, 시각은 서버가 기록한다.
- * `photoUrl`의 R2 접두사 · 객체 재검증은 업로드 기능(Phase 4)에서 더한다. 여기서는 URL 형식만 본다.
+ * `photoUrl`의 R2 접두사 · 객체 재검증은 저장 서비스가 UploadVerifier로 한다. 여기서는 URL 형식만 본다.
  */
 @RoleMatchesStatus
 public record MemberRequest(

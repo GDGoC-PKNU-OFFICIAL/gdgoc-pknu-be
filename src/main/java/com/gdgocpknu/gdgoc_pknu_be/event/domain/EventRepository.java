@@ -13,6 +13,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecificationExecutor<Event> {
 
+    /** 대시보드 최근 수정. 수정 시각이 같으면 나중에 등록한 것 먼저. */
+    List<Event> findTop5ByOrderByUpdatedAtDescIdDesc();
+
     /** 해당 날짜의 마지막 순서 일정. 등록 · 날짜 변경 시 "마지막 순서 + 1"을 구하는 데 쓴다. */
     Optional<Event> findFirstByDateOrderBySortOrderDesc(LocalDate date);
 
