@@ -8,5 +8,10 @@ spring:
       maximum-pool-size: 5
       minimum-idle: 1
       connection-timeout: 10000
+  flyway:
+    # Render 무료 인스턴스(0.1 CPU)는 기동 중 첫 TLS 핸드셰이크가 느려 Supabase pooler가 끊는다.
+    # 두 번째 시도부터는 SSL 엔진이 준비돼 붙는다. docs/troubleshooting-supabase-ssl.md 참고.
+    connect-retries: 10
+    connect-retries-interval: 5s
   jpa:
     show-sql: false
