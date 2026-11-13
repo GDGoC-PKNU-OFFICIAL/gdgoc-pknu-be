@@ -180,17 +180,36 @@ class AdminSettingControllerTest {
     }
 
     @Test
-    void 통계_value는_0과_int_최댓값까지_정수로_받는다() throws Exception {
+    void 통계_value는_0과_상한_999999까지_정수로_받는다() throws Exception {
         seed();
-        String stats = "[" + stat("기수", "0") + "," + stat("멤버", "2147483647") + "," + stat("프로젝트", "7") + ","
+        String stats = "[" + stat("기수", "0") + "," + stat("멤버", "999999") + "," + stat("프로젝트", "7") + ","
                 + stat("행사", "0") + "]";
 
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON)
                         .content(raw("\"recruitPeriod\": null", stats)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.stats[0].value").value(0))
-                .andExpect(jsonPath("$.stats[1].value").value(2147483647))
+                .andExpect(jsonPath("$.stats[1].value").value(999999))
                 .andExpect(jsonPath("$.stats[2].value").value(7));
+    }
+
+    @Test
+    void 통계_value가_상한을_넘으면_해당_필드_오류로_400이고_기존_값은_그대로다() throws Exception {
+        seed();
+        for (String value : List.of("1000000", "2147483647")) {
+            String stats = "[" + stat("기수", "1") + "," + stat("멤버", value) + "," + stat("프로젝트", "1") + ","
+                    + stat("행사", "1") + "]";
+
+            mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON)
+                            .content(raw("\"recruitPeriod\": null", stats)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                    .andExpect(jsonPath("$.fieldErrors[0].field").value("stats[1].value"));
+        }
+
+        mockMvc.perform(get("/api/admin/settings").with(user("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stats[1].value").value(0));
     }
 
     @Test
