@@ -3,6 +3,7 @@ package com.gdgocpknu.gdgoc_pknu_be.setting.dto;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.StrictIntegerDeserializer;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -26,10 +27,17 @@ public record SettingRequest(
     public record RecruitPeriodRequest(LocalDate start, LocalDate end) {
     }
 
-    /** `value`는 0 이상 정수다. 소수 · 문자열이 조용히 정수로 바뀌어 저장되지 않도록 정수만 받는다. */
+    /** 통계 값의 상한. 홈 화면의 큰 숫자 칸에 들어가는 자릿수(쉼표 포함 7자)에 맞춘 값이다. */
+    public static final int MAX_STAT_VALUE = 999_999;
+
+    /**
+     * `value`는 0 이상 {@value #MAX_STAT_VALUE} 이하 정수다. 소수 · 문자열이 조용히 정수로 바뀌어 저장되지 않도록
+     * 정수만 받는다. 상한이 없으면 `int` 최댓값(21억)까지 들어가 홈 화면 레이아웃이 깨진다.
+     */
     public record StatRequest(
             @NotBlank @Size(max = 20) String label,
-            @NotNull @PositiveOrZero @JsonDeserialize(using = StrictIntegerDeserializer.class) Integer value,
+            @NotNull @PositiveOrZero @Max(value = MAX_STAT_VALUE, message = "999,999 이하여야 합니다.")
+            @JsonDeserialize(using = StrictIntegerDeserializer.class) Integer value,
             @Size(max = 10) String unit,
             @Size(max = 5) String suffix) {
     }

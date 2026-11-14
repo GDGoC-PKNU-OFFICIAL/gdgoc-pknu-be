@@ -98,6 +98,18 @@ class SettingRequestValidationTest {
     }
 
     @Test
+    void 통계의_value는_상한까지만_통과하고_1만_넘어도_위반이다() {
+        List<StatRequest> atLimit = new ArrayList<>(stats(3));
+        atLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE, null, null));
+        assertThat(validator.validate(valid(r -> withStats(r, atLimit)))).isEmpty();
+
+        List<StatRequest> overLimit = new ArrayList<>(stats(3));
+        overLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE + 1, null, null));
+        assertThat(fieldsOf(validator.validate(valid(r -> withStats(r, overLimit)))))
+                .containsExactly("stats[3].value");
+    }
+
+    @Test
     void 배너_문구는_필수이고_60자_이하다() {
         assertThat(fieldsOf(validator.validate(valid(r -> withBanner(r, ""))))).containsExactly("bannerText");
         assertThat(fieldsOf(validator.validate(valid(r -> withBanner(r, "가".repeat(61)))))).containsExactly("bannerText");
