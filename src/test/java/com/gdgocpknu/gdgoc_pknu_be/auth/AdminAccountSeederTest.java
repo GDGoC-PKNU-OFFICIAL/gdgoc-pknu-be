@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUser;
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUserRepository;
+import com.gdgocpknu.gdgoc_pknu_be.auth.dto.LoginRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -60,6 +61,27 @@ class AdminAccountSeederTest {
         verify(repository).save(captor.capture());
         assertThat(captor.getValue().getLoginId()).isEqualTo("admin");
         assertThat(captor.getValue().getPasswordHash()).isEqualTo("hashed-password");
+    }
+
+    @Test
+    void 비밀번호가_로그인_상한을_넘으면_로그인할_수_없는_계정이_되므로_만들지_않는다() {
+        given(repository.count()).willReturn(0L);
+        String tooLong = "a".repeat(LoginRequest.MAX_PASSWORD_LENGTH + 1);
+
+        seeder(new AdminSeedProperties("admin", tooLong)).run(null);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void 비밀번호가_로그인_상한과_같은_길이면_계정을_만든다() {
+        given(repository.count()).willReturn(0L);
+        String atLimit = "a".repeat(LoginRequest.MAX_PASSWORD_LENGTH);
+        given(encoder.encode(atLimit)).willReturn("hashed-password");
+
+        seeder(new AdminSeedProperties("admin", atLimit)).run(null);
+
+        verify(repository).save(any());
     }
 
     private AdminAccountSeeder seeder(AdminSeedProperties properties) {
