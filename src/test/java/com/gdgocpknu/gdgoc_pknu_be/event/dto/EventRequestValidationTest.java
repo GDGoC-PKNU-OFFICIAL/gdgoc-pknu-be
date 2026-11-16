@@ -90,6 +90,19 @@ class EventRequestValidationTest {
                 .anyMatch(field -> field.startsWith("orderedIds[1]"));
     }
 
+    @Test
+    void 순서_변경_요청의_id_목록은_상한까지만_통과하고_하나만_넘어도_위반이다() {
+        List<Long> atLimit = ids(EventOrderRequest.MAX_ORDERED_IDS);
+        assertThat(validator.validate(new EventOrderRequest(DATE, atLimit))).isEmpty();
+
+        List<Long> overLimit = ids(EventOrderRequest.MAX_ORDERED_IDS + 1);
+        assertThat(fieldsOf(validator.validate(new EventOrderRequest(DATE, overLimit)))).containsExactly("orderedIds");
+    }
+
+    private static List<Long> ids(int count) {
+        return java.util.stream.LongStream.rangeClosed(1, count).boxed().toList();
+    }
+
     private static EventRequest request(LocalDate date, LocalDate endDate) {
         return new EventRequest("GDGoC 세미나", EventCategory.SEMINAR, date, endDate, "19:00–21:00", "공학관 101호", "한 줄 요약");
     }
