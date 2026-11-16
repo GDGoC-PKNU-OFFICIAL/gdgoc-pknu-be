@@ -2,7 +2,6 @@ package com.gdgocpknu.gdgoc_pknu_be.auth;
 
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUser;
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUserRepository;
-import com.gdgocpknu.gdgoc_pknu_be.auth.dto.LoginRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -39,10 +38,10 @@ public class AdminAccountSeeder implements ApplicationRunner {
                     + "로그인이 필요하면 두 환경변수를 설정하고 다시 기동하세요.");
             return;
         }
-        if (properties.password().length() > LoginRequest.MAX_PASSWORD_LENGTH) {
-            // 로그인 요청이 이 길이를 넘으면 400이라, 만들어 봐야 아무도 로그인할 수 없는 계정이 된다.
-            log.warn("ADMIN_PASSWORD가 {}자를 넘어 관리자 계정을 만들지 않았습니다. 더 짧은 값으로 바꾸고 다시 기동하세요.",
-                    LoginRequest.MAX_PASSWORD_LENGTH);
+        if (properties.isPasswordTooLong()) {
+            // BCrypt가 72바이트를 넘는 값은 해시하지 못해 encode가 예외를 던진다. 그대로 두면 앱이 기동에 실패한다.
+            log.warn("ADMIN_PASSWORD가 {}바이트(UTF-8)를 넘어 관리자 계정을 만들지 않았습니다. 더 짧은 값으로 바꾸고 다시 기동하세요.",
+                    AdminSeedProperties.MAX_PASSWORD_BYTES);
             return;
         }
         adminUserRepository.save(AdminUser.create(properties.loginId(), passwordEncoder.encode(properties.password())));

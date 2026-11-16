@@ -9,7 +9,8 @@ import jakarta.validation.constraints.Size;
 public record LoginRequest(
         @NotBlank @Size(max = 40) String loginId,
         // 비밀번호는 앞뒤 공백도 값의 일부다 — JacksonConfig의 전역 트리밍에서 이 필드만 뺀다.
-        // BCrypt는 앞 72바이트만 쓰므로 그보다 넉넉한 상한을 둬, 거대한 값이 해시 계산까지 가지 않게 한다.
+        // 72바이트를 넘는 값은 BCrypt에 일치할 수 없어 어차피 401이다. 그보다 넉넉한 상한을 둬 거대한 값이 해시
+        // 계산까지 가지 않게 한다(글자 수 기준이라 한글은 72바이트를 넘을 수 있다).
         @NotBlank @Size(max = LoginRequest.MAX_PASSWORD_LENGTH)
         @JsonDeserialize(using = StringDeserializer.class) String password) {
 
