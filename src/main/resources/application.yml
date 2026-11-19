@@ -45,9 +45,10 @@ app:
     login-id: ${ADMIN_LOGIN_ID:}
     password: ${ADMIN_PASSWORD:}
   r2:
-    # JWT_SECRET과 같은 규칙이다. 운영에서 값이 없으면 기동이 실패한다 — 재검증 없이 저장되는 일을 막는다.
-    account-id: ${R2_ACCOUNT_ID}
-    access-key: ${R2_ACCESS_KEY}
-    secret-key: ${R2_SECRET_KEY}
-    bucket: ${R2_BUCKET}
-    public-base-url: ${R2_PUBLIC_BASE_URL}
+    # 운영에서 값이 없으면 기동이 실패한다 — 재검증 없이 저장되는 일을 막는다. 기본값을 빈 값으로 두는 것은
+    # 빠진 변수 이름이 R2Properties의 오류 메시지에 나오게 하려는 것이다(기본값이 없으면 `${...}`가 그대로 들어간다).
+    account-id: ${R2_ACCOUNT_ID:}
+    access-key: ${R2_ACCESS_KEY:}
+    secret-key: ${R2_SECRET_KEY:}
+    bucket: ${R2_BUCKET:}
+    public-base-url: ${R2_PUBLIC_BASE_URL:}

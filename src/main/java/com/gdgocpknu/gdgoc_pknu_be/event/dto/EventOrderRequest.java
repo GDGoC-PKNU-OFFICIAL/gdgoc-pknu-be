@@ -2,6 +2,7 @@ package com.gdgocpknu.gdgoc_pknu_be.event.dto;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.validation.NoDuplicates;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,5 +12,8 @@ import java.util.List;
  */
 public record EventOrderRequest(
         @NotNull LocalDate date,
-        @NotNull @NoDuplicates List<@NotNull Long> orderedIds) {
+        @NotNull @Size(max = EventOrderRequest.MAX_ORDERED_IDS) @NoDuplicates List<@NotNull Long> orderedIds) {
+
+    /** 같은 날짜에 일정이 이보다 많을 일은 없다. 목록 크기를 DB 조회 전에 제한한다. */
+    public static final int MAX_ORDERED_IDS = 100;
 }

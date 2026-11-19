@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUser;
 import com.gdgocpknu.gdgoc_pknu_be.auth.domain.AdminUserRepository;
+import com.gdgocpknu.gdgoc_pknu_be.auth.dto.LoginRequest;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,6 +66,20 @@ class AdminAuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='loginId')]").exists())
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='password')]").exists());
+    }
+
+    @Test
+    void 비밀번호가_상한_128자까지는_검증을_통과해_401이고_넘으면_400이다() throws Exception {
+        mockMvc.perform(post("/api/admin/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody("admin", "a".repeat(LoginRequest.MAX_PASSWORD_LENGTH))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("LOGIN_FAILED"));
+
+        mockMvc.perform(post("/api/admin/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody("admin", "a".repeat(LoginRequest.MAX_PASSWORD_LENGTH + 1))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("password"));
     }
 
     private static String loginBody(String loginId, String password) {
