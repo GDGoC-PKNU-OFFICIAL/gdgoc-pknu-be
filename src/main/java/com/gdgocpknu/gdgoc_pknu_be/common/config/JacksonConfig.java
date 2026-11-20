@@ -1,6 +1,8 @@
 package com.gdgocpknu.gdgoc_pknu_be.common.config;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
@@ -19,6 +21,26 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class JacksonConfig {
+
+    /**
+     * 요청 하나가 메모리를 쓸 수 있는 크기의 상한. Jackson 기본값은 문자열 하나가 2천만 자까지 허용돼 로그인처럼
+     * 인증 없이 부르는 API에 큰 본문을 동시에 보내면 힙(무료 티어 약 384MB)이 바닥난다. 검증(`@Size`)은 문자열을
+     * 다 읽은 뒤에 돌므로 이 단계에서 막아야 메모리를 지킨다.
+     * 정상 요청의 가장 큰 값은 소개 문단 1천 자, 본문 전체 2만 자 안팎이라 아래 값은 그보다 훨씬 넉넉하다.
+     */
+    static final int MAX_STRING_LENGTH = 10_000;
+    static final int MAX_DOCUMENT_LENGTH = 200_000;
+    static final int MAX_NESTING_DEPTH = 50;
+
+    @Bean
+    Jackson2ObjectMapperBuilderCustomizer limitRequestSize() {
+        StreamReadConstraints constraints = StreamReadConstraints.builder()
+                .maxStringLength(MAX_STRING_LENGTH)
+                .maxDocumentLength(MAX_DOCUMENT_LENGTH)
+                .maxNestingDepth(MAX_NESTING_DEPTH)
+                .build();
+        return builder -> builder.factory(JsonFactory.builder().streamReadConstraints(constraints).build());
+    }
 
     @Bean
     Jackson2ObjectMapperBuilderCustomizer trimRequestStrings() {
