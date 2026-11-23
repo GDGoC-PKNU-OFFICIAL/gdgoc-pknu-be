@@ -31,7 +31,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ResponseEntity<ErrorResponse> handleBusiness(BusinessException e) {
         ErrorCode code = e.errorCode();
         List<FieldErrorItem> fieldErrors = e.fieldErrors().isEmpty() ? null : e.fieldErrors();
-        return ResponseEntity.status(code.status()).body(ErrorResponse.of(code, fieldErrors));
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(code.status());
+        if (e.retryAfter() != null) {
+            // 초 단위 올림. 0초로 보이면 클라이언트가 바로 다시 보낸다.
+            response.header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, (e.retryAfter().toMillis() + 999) / 1000)));
+        }
+        return response.body(ErrorResponse.of(code, fieldErrors));
     }
 
     /**
