@@ -37,6 +37,9 @@ public class ProjectMapper {
                 project.getSummary(),
                 List.copyOf(project.getDescription()),
                 project.getCategory(),
+                project.getBadgeLabel() == null
+                        ? null
+                        : new ProjectResponse.Badge(project.getBadgeLabel(), project.getBadgeColor()),
                 PeriodStatus.of(periodEnd, firstDayOfThisMonth),
                 new ProjectResponse.Period(
                         YearMonthText.format(project.getPeriodStart()),

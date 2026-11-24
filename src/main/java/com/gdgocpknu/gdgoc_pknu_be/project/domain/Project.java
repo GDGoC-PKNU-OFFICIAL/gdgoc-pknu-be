@@ -43,6 +43,12 @@ public class Project extends BaseTimeEntity {
     @Convert(converter = ProjectCategoryConverter.class)
     private ProjectCategory category;
 
+    /** 카드 배지 글자. 없으면 화면은 category 라벨을 쓴다. badgeColor와 함께 있거나 함께 없다 (DB CHECK). */
+    private String badgeLabel;
+
+    @Convert(converter = BadgeColorConverter.class)
+    private BadgeColor badgeColor;
+
     private LocalDate periodStart;
 
     private LocalDate periodEnd;
@@ -72,10 +78,10 @@ public class Project extends BaseTimeEntity {
 
     @Builder
     private Project(String slug, String title, String summary, ProjectCategory category,
-                    LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
+                    String badgeLabel, BadgeColor badgeColor, LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
                     String githubUrl, String demoUrl, List<String> description,
                     List<String> techStack, List<String> features, List<String> outcomes) {
-        updateContent(slug, title, summary, category, periodStart, periodEnd, thumbnailUrl,
+        updateContent(slug, title, summary, category, badgeLabel, badgeColor, periodStart, periodEnd, thumbnailUrl,
                 githubUrl, demoUrl, description, techStack, features, outcomes);
     }
 
@@ -84,13 +90,15 @@ public class Project extends BaseTimeEntity {
      * {@code team}은 별도로 {@link #clearTeam()} 후 {@link #addTeamMember}를 다시 호출해 채운다.
      */
     public void updateContent(String slug, String title, String summary, ProjectCategory category,
-                              LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
+                              String badgeLabel, BadgeColor badgeColor, LocalDate periodStart, LocalDate periodEnd, String thumbnailUrl,
                               String githubUrl, String demoUrl, List<String> description,
                               List<String> techStack, List<String> features, List<String> outcomes) {
         this.slug = slug;
         this.title = title;
         this.summary = summary;
         this.category = category;
+        this.badgeLabel = badgeLabel;
+        this.badgeColor = badgeColor;
         this.periodStart = periodStart;
         this.periodEnd = periodEnd;
         this.thumbnailUrl = thumbnailUrl;

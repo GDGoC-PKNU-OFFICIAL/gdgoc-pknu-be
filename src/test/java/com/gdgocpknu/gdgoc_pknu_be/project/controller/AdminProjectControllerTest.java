@@ -12,9 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest;
+import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.BadgeRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.LinksRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.PeriodRequest;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest.TeamMemberRequest;
+import com.gdgocpknu.gdgoc_pknu_be.project.domain.BadgeColor;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectCategory;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectRepository;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
@@ -110,7 +112,7 @@ class AdminProjectControllerTest {
                 "새 제목", "editable", "새 요약", ProjectCategory.OFFICIAL,
                 new PeriodRequest("2026.01", null), null,
                 List.of("새 소개"), List.of(new TeamMemberRequest("김부경", "프론트엔드")),
-                List.of(), List.of(), List.of(), new LinksRequest(null, null));
+                List.of(), List.of(), List.of(), new LinksRequest(null, null), null);
 
         mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -230,7 +232,7 @@ class AdminProjectControllerTest {
         ProjectRequest update = new ProjectRequest(
                 "바뀐 제목", "touch-me", "부경대 길찾기 웹앱", ProjectCategory.TEAM_PROJECT,
                 new PeriodRequest("2026.03", "2026.06"), null,
-                List.of("소개 문단"), List.of(), List.of(), List.of(), List.of(), new LinksRequest(null, null));
+                List.of("소개 문단"), List.of(), List.of(), List.of(), List.of(), new LinksRequest(null, null), null);
 
         mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -250,7 +252,7 @@ class AdminProjectControllerTest {
                 new PeriodRequest("2026.03", "2026.06"), null,
                 List.of("소개 문단"), List.of(new TeamMemberRequest("김부경", "프론트엔드")),
                 List.of("Next.js", "Spring Boot"), List.of(), List.of(),
-                new LinksRequest("https://github.com/gdgoc-pknu/team-only", null));
+                new LinksRequest("https://github.com/gdgoc-pknu/team-only", null), null);
 
         mockMvc.perform(put("/api/admin/projects/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -286,7 +288,7 @@ class AdminProjectControllerTest {
                 paddedTitle, " trimmed-slug ", " 요약 ", ProjectCategory.OFFICIAL,
                 new PeriodRequest(" 2026.03 ", null), null,
                 List.of(" 소개 "), List.of(new TeamMemberRequest(" 홍길동 ", " 백엔드 ")),
-                List.of(" Spring "), List.of(), List.of(), new LinksRequest(" https://github.com/gdgoc-pknu ", null));
+                List.of(" Spring "), List.of(), List.of(), new LinksRequest(" https://github.com/gdgoc-pknu ", null), null);
 
         mockMvc.perform(post("/api/admin/projects").with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(request)))
@@ -310,6 +312,48 @@ class AdminProjectControllerTest {
                 """.formatted(slug, description, team, techStack);
     }
 
+    @Test
+    void 배지를_보내면_저장되고_생략하면_응답에서_빠진다() throws Exception {
+        ProjectRequest base = request("badge");
+        ProjectRequest withBadge = new ProjectRequest(
+                base.title(), base.slug(), base.summary(), base.category(), base.period(), base.thumbnailUrl(),
+                base.description(), base.team(), base.techStack(), base.features(), base.outcomes(), base.links(),
+                new BadgeRequest("  해커톤 수상 ", BadgeColor.PURPLE));
+
+        Long id = createAndGetId(withBadge);
+        mockMvc.perform(get("/api/admin/projects/" + id).with(user("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.badge.label").value("해커톤 수상"))
+                .andExpect(jsonPath("$.badge.color").value("purple"));
+
+        // PUT 은 전체 교체 — badge 를 빼고 보내면 배지가 지워진다
+        mockMvc.perform(put("/api/admin/projects/" + id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(base)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.badge").doesNotExist());
+    }
+
+    @Test
+    void 배지_글자가_비었거나_없는_색이면_400이다() throws Exception {
+        String body = json(request("bad-badge"));
+        String blankLabel = withBadgeJson(body, "{\"label\":\" \",\"color\":\"blue\"}");
+        String unknownColor = withBadgeJson(body, "{\"label\":\"수상\",\"color\":\"pink\"}");
+        // 요청 직렬화는 non_null 이라 badge 키가 없다 — 마지막 } 앞에 붙인다
+
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(blankLabel))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='badge.label')]").exists());
+
+        mockMvc.perform(post("/api/admin/projects").with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(unknownColor))
+                .andExpect(status().isBadRequest());
+    }
+
+    private static String withBadgeJson(String body, String badge) {
+        return body.substring(0, body.lastIndexOf('}')) + ",\"badge\":" + badge + "}";
+    }
+
     private Long createAndGetId(ProjectRequest request) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/admin/projects").with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(request)))
@@ -329,6 +373,6 @@ class AdminProjectControllerTest {
                 new PeriodRequest("2026.03", "2026.06"), null,
                 List.of("소개 문단"), List.of(new TeamMemberRequest("홍길동", "백엔드")),
                 List.of("Next.js", "Spring Boot"), List.of(), List.of(),
-                new LinksRequest("https://github.com/gdgoc-pknu/" + slug, null));
+                new LinksRequest("https://github.com/gdgoc-pknu/" + slug, null), null);
     }
 }
