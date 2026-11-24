@@ -109,6 +109,6 @@ class JacksonLimitsTest {
                 IntStream.range(0, 10).mapToObj(i -> String.valueOf((char) ('a' + i)).repeat(20)).toList(),
                 java.util.Collections.nCopies(10, "가".repeat(80)),
                 java.util.Collections.nCopies(10, "가".repeat(80)),
-                new LinksRequest("https://" + "a".repeat(492), "https://" + "b".repeat(492)));
+                new LinksRequest("https://" + "a".repeat(492), "https://" + "b".repeat(492)), null);
     }
 }

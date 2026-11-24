@@ -3,6 +3,7 @@ package com.gdgocpknu.gdgoc_pknu_be.project.dto;
 import com.gdgocpknu.gdgoc_pknu_be.common.validation.HasYearMonthRange;
 import com.gdgocpknu.gdgoc_pknu_be.common.validation.NoDuplicates;
 import com.gdgocpknu.gdgoc_pknu_be.common.validation.PeriodOrder;
+import com.gdgocpknu.gdgoc_pknu_be.project.domain.BadgeColor;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectCategory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -31,7 +32,8 @@ public record ProjectRequest(
         @NotNull @Size(max = 10) @NoDuplicates List<@NotBlank @Size(max = 20) String> techStack,
         @NotNull @Size(max = 10) List<@NotBlank @Size(max = 80) String> features,
         @NotNull @Size(max = 10) List<@NotBlank @Size(max = 80) String> outcomes,
-        @NotNull @Valid LinksRequest links) {
+        @NotNull @Valid LinksRequest links,
+        @Valid BadgeRequest badge) {
 
     private static final String YEAR_MONTH_PATTERN = "^\\d{4}\\.(0[1-9]|1[0-2])$";
 
@@ -46,6 +48,12 @@ public record ProjectRequest(
     public record TeamMemberRequest(
             @NotBlank @Size(max = 20) String name,
             @NotBlank @Size(max = 20) String role) {
+    }
+
+    /** 카드 배지. 생략(null)하면 화면은 category 라벨 · 색을 쓴다. 보낼 때는 글자 · 색이 모두 있어야 한다. */
+    public record BadgeRequest(
+            @NotBlank @Size(max = 20) String label,
+            @NotNull BadgeColor color) {
     }
 
     public record LinksRequest(

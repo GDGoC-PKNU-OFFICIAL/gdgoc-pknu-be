@@ -3,6 +3,7 @@ package com.gdgocpknu.gdgoc_pknu_be.project.service;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.BusinessException;
 import com.gdgocpknu.gdgoc_pknu_be.common.error.ErrorCode;
 import com.gdgocpknu.gdgoc_pknu_be.common.support.YearMonthText;
+import com.gdgocpknu.gdgoc_pknu_be.project.domain.BadgeColor;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.Project;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectRepository;
 import com.gdgocpknu.gdgoc_pknu_be.project.dto.ProjectRequest;
@@ -44,6 +45,8 @@ public class ProjectCommandService {
                 .title(request.title())
                 .summary(request.summary())
                 .category(request.category())
+                .badgeLabel(badgeLabel(request))
+                .badgeColor(badgeColor(request))
                 .periodStart(YearMonthText.parse(request.period().start()))
                 .periodEnd(YearMonthText.parse(request.period().end()))
                 .thumbnailUrl(request.thumbnailUrl())
@@ -69,6 +72,7 @@ public class ProjectCommandService {
         LocalDate periodEnd = YearMonthText.parse(request.period().end());
         project.updateContent(
                 request.slug(), request.title(), request.summary(), request.category(),
+                badgeLabel(request), badgeColor(request),
                 periodStart, periodEnd, request.thumbnailUrl(),
                 request.links().github(), request.links().demo(),
                 request.description(), request.techStack(), request.features(), request.outcomes());
@@ -80,6 +84,14 @@ public class ProjectCommandService {
         // updatedAt(@LastModifiedDate)은 flush 시점에 채워지므로, 응답을 만들기 전에 flush해야 새 값이 나간다.
         projectRepository.flush();
         return projectMapper.toResponse(project);
+    }
+
+    private static String badgeLabel(ProjectRequest request) {
+        return request.badge() == null ? null : request.badge().label().strip();
+    }
+
+    private static BadgeColor badgeColor(ProjectRequest request) {
+        return request.badge() == null ? null : request.badge().color();
     }
 
     /** 팀원 행(`project_team`)은 `ON DELETE CASCADE`로 함께 삭제된다. */

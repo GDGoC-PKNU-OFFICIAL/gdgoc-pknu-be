@@ -37,7 +37,7 @@ class ProjectRequestValidationTest {
                 "t", "slug", "s", ProjectCategory.OFFICIAL,
                 new ProjectRequest.PeriodRequest("2026.03", null), null,
                 List.of("desc"), List.of(), List.of(), null, List.of(),
-                new ProjectRequest.LinksRequest(null, null));
+                new ProjectRequest.LinksRequest(null, null), null);
         assertThat(fieldsOf(validator.validate(withoutFeatures))).contains("features");
     }
 
@@ -116,7 +116,7 @@ class ProjectRequestValidationTest {
 
         ProjectRequest build() {
             return new ProjectRequest(title, slug, summary, category, period, thumbnailUrl,
-                    description, team, techStack, features, outcomes, links);
+                    description, team, techStack, features, outcomes, links, null);
         }
     }
 }
