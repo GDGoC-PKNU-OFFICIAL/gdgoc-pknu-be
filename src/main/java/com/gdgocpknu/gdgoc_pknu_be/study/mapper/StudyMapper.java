@@ -35,6 +35,7 @@ public class StudyMapper {
                 study.getSlug(),
                 study.getTitle(),
                 study.getSummary(),
+                List.copyOf(study.getDescription()),
                 study.getTopic(),
                 PeriodStatus.of(periodEnd, firstDayOfThisMonth),
                 new StudyResponse.Period(

@@ -40,6 +40,7 @@ public class StudyCommandService {
                 .periodEnd(YearMonthText.parse(request.period().end()))
                 .leader(request.leader())
                 .format(request.format())
+                .description(request.description())
                 .build();
         applyChildren(study, request);
 
@@ -55,7 +56,7 @@ public class StudyCommandService {
         LocalDate periodEnd = YearMonthText.parse(request.period().end());
         study.updateContent(
                 request.slug(), request.title(), request.summary(), request.topic(),
-                periodStart, periodEnd, request.leader(), request.format());
+                periodStart, periodEnd, request.leader(), request.format(), request.description());
         study.clearParticipants();
         study.clearOutputs();
         applyChildren(study, request);
