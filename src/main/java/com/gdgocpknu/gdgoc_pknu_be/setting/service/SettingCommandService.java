@@ -32,16 +32,16 @@ public class SettingCommandService {
         LocalDate start = period == null ? null : period.start();
         LocalDate end = period == null ? null : period.end();
         List<StatValue> stats = request.stats().stream()
-                .map(stat -> new StatValue(stat.label(), stat.value(), stat.unit(), stat.suffix()))
+                .map(stat -> new StatValue(stat.label(), stat.value()))
                 .toList();
 
         SiteSetting setting = siteSettingRepository.findById(SiteSetting.SINGLETON_ID)
                 .map(existing -> {
-                    existing.update(request.recruiting(), request.bannerText(), start, end, stats);
+                    existing.update(request.recruiting(), start, end, stats);
                     return existing;
                 })
                 .orElseGet(() -> siteSettingRepository.save(
-                        SiteSetting.create(request.recruiting(), request.bannerText(), start, end, stats)));
+                        SiteSetting.create(request.recruiting(), start, end, stats)));
         // 통계 값만 바뀐 수정은 site_setting 행이 dirty하지 않아 auditing이 updatedAt을 갱신하지 않는다.
         setting.touch(clock.instant());
 

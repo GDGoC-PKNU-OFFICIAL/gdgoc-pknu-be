@@ -25,6 +25,6 @@ public record MemberResponse(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt) {
 
-    public record Links(String github, String homepage) {
+    public record Links(String github, String email) {
     }
 }

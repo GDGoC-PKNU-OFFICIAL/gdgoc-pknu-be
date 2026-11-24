@@ -6,6 +6,7 @@ import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -34,6 +35,6 @@ public record MemberRequest(
 
     public record LinksRequest(
             @Pattern(regexp = "^https?://.+", message = "URL 형식이 올바르지 않습니다.") @Size(max = 500) String github,
-            @Pattern(regexp = "^https?://.+", message = "URL 형식이 올바르지 않습니다.") @Size(max = 500) String homepage) {
+            @Email(message = "이메일 형식이 올바르지 않습니다.") @Size(max = 254) String email) {
     }
 }

@@ -36,10 +36,6 @@ public class SiteStat {
 
     private int value;
 
-    private String unit;
-
-    private String suffix;
-
     static SiteStat of(SiteSetting setting, int sortOrder, StatValue stat) {
         SiteStat entity = new SiteStat();
         entity.setting = setting;
@@ -51,12 +47,5 @@ public class SiteStat {
     void apply(StatValue stat) {
         this.label = stat.label();
         this.value = stat.value();
-        // 폼의 빈 입력("")은 "값 없음"이다. null로 저장해야 응답에서 생략된다(non_null은 빈 문자열을 남긴다).
-        this.unit = blankToNull(stat.unit());
-        this.suffix = blankToNull(stat.suffix());
-    }
-
-    private static String blankToNull(String value) {
-        return (value == null || value.isBlank()) ? null : value;
     }
 }

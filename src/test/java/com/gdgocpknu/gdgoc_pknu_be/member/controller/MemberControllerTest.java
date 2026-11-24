@@ -56,7 +56,7 @@ class MemberControllerTest {
                 .photoUrl("https://example.r2.dev/members/a.webp").department("컴퓨터공학과")
                 .history(List.of("2026 파트 리드", "솔루션 챌린지 수상")).interests(List.of("LLM", "백엔드", "클라우드"))
                 .part(MemberPart.AI_ML).bio("함께 만드는 개발자")
-                .githubUrl("https://github.com/gildong").homepageUrl("https://gildong.dev")
+                .githubUrl("https://github.com/gildong").email("gildong@example.com")
                 .consentConfirmedAt(Instant.parse("2026-03-01T00:00:00Z")));
         flushAndClear();
 
@@ -69,7 +69,7 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$[0].history[1]").value("솔루션 챌린지 수상"))
                 .andExpect(jsonPath("$[0].interests[2]").value("클라우드"))
                 .andExpect(jsonPath("$[0].links.github").value("https://github.com/gildong"))
-                .andExpect(jsonPath("$[0].links.homepage").value("https://gildong.dev"))
+                .andExpect(jsonPath("$[0].links.email").value("gildong@example.com"))
                 .andExpect(jsonPath("$[0].createdAt").value(endsWith("+09:00")))
                 .andExpect(jsonPath("$[0].updatedAt").value(endsWith("+09:00")))
                 .andExpect(jsonPath("$[0].consentConfirmedAt").doesNotExist());
@@ -85,7 +85,7 @@ class MemberControllerTest {
                 .andExpect(jsonPath("$[0].role").doesNotExist())
                 .andExpect(jsonPath("$[0].photoUrl").doesNotExist())
                 .andExpect(jsonPath("$[0].links.github").doesNotExist())
-                .andExpect(jsonPath("$[0].links.homepage").doesNotExist())
+                .andExpect(jsonPath("$[0].links.email").doesNotExist())
                 .andExpect(jsonPath("$[0].history").isEmpty())
                 .andExpect(jsonPath("$[0].interests").isEmpty());
     }

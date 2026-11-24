@@ -30,7 +30,6 @@ class SiteSettingSeederTest {
 
         SiteSetting setting = siteSettingRepository.findById(SiteSetting.SINGLETON_ID).orElseThrow();
         assertThat(setting.isRecruiting()).isFalse();
-        assertThat(setting.getBannerText()).isNotBlank();
         assertThat(setting.getRecruitStart()).isNull();
         assertThat(setting.getStats()).extracting(SiteStat::getLabel)
                 .containsExactly("운영 기수", "누적 멤버", "완료 프로젝트", "세션·이벤트");
@@ -39,9 +38,9 @@ class SiteSettingSeederTest {
 
     @Test
     void 이미_행이_있으면_관리자가_바꾼_값을_덮어쓰지_않는다() {
-        siteSettingRepository.save(SiteSetting.create(true, "관리자가 쓴 배너", null, null, List.of(
-                new StatValue("기수", 9, null, null), new StatValue("멤버", 9, null, null),
-                new StatValue("프로젝트", 9, null, null), new StatValue("행사", 9, null, null))));
+        siteSettingRepository.save(SiteSetting.create(true, null, null, List.of(
+                new StatValue("기수", 9), new StatValue("멤버", 9),
+                new StatValue("프로젝트", 9), new StatValue("행사", 9))));
         em.flush();
         em.clear();
 
@@ -51,7 +50,6 @@ class SiteSettingSeederTest {
 
         SiteSetting setting = siteSettingRepository.findById(SiteSetting.SINGLETON_ID).orElseThrow();
         assertThat(setting.isRecruiting()).isTrue();
-        assertThat(setting.getBannerText()).isEqualTo("관리자가 쓴 배너");
         assertThat(setting.getStats()).extracting(SiteStat::getValue).containsExactly(9, 9, 9, 9);
     }
 

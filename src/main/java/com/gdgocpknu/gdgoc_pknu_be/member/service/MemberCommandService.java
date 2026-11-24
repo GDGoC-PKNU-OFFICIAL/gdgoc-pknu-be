@@ -44,7 +44,7 @@ public class MemberCommandService {
                 .part(request.part())
                 .bio(request.bio())
                 .githubUrl(request.links().github())
-                .homepageUrl(request.links().homepage())
+                .email(request.links().email())
                 .consentConfirmedAt(clock.instant())
                 .build();
 
@@ -59,7 +59,7 @@ public class MemberCommandService {
         member.updateContent(
                 request.status(), request.role(), request.name(), request.photoUrl(), request.department(),
                 request.history(), request.interests(), request.part(), request.bio(),
-                request.links().github(), request.links().homepage());
+                request.links().github(), request.links().email());
         // 내용이 같은 PUT은 행이 dirty하지 않아 auditing이 updatedAt을 갱신하지 않는다. 저장 요청이면 항상 갱신한다.
         member.touch(clock.instant());
 

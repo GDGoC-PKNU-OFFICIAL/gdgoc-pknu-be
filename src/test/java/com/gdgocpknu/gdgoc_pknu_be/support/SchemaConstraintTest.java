@@ -100,7 +100,7 @@ class SchemaConstraintTest {
     @Test
     void 사이트_설정은_id_1인_단일_행만_허용한다() {
         assertThatThrownBy(() -> jdbc.update(
-                "INSERT INTO site_setting (id, recruiting, banner_text) VALUES (2, true, '모집중')"))
+                "INSERT INTO site_setting (id, recruiting) VALUES (2, true)"))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_site_setting_single_row");
     }
@@ -108,15 +108,15 @@ class SchemaConstraintTest {
     @Test
     void 모집_기간은_둘_다_있거나_둘_다_없어야_한다() {
         assertThatThrownBy(() -> jdbc.update("""
-                INSERT INTO site_setting (id, recruiting, banner_text, recruit_start)
-                VALUES (1, true, '모집중', DATE '2026-09-01')"""))
+                INSERT INTO site_setting (id, recruiting, recruit_start)
+                VALUES (1, true, DATE '2026-09-01')"""))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_site_setting_recruit_period");
     }
 
     @Test
     void 통계는_순서_1에서_4까지만_저장할_수_있다() {
-        jdbc.update("INSERT INTO site_setting (id, recruiting, banner_text) VALUES (1, true, '모집중')");
+        jdbc.update("INSERT INTO site_setting (id, recruiting) VALUES (1, true)");
 
         assertThatThrownBy(() -> jdbc.update(
                 "INSERT INTO site_stat (setting_id, sort_order, label, value) VALUES (1, 5, '기수', 1)"))

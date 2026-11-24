@@ -55,6 +55,6 @@ public class MemberMapper {
     }
 
     private static MemberResponse.Links links(Member member) {
-        return new MemberResponse.Links(member.getGithubUrl(), member.getHomepageUrl());
+        return new MemberResponse.Links(member.getGithubUrl(), member.getEmail());
     }
 }

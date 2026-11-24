@@ -17,7 +17,6 @@ import java.util.List;
  */
 public record SettingRequest(
         @NotNull Boolean recruiting,
-        @NotBlank @Size(max = 60) String bannerText,
         @Valid RecruitPeriodRequest recruitPeriod,
         @NotNull @Size(min = 4, max = 4, message = "통계는 정확히 4개여야 합니다.")
         List<@NotNull @Valid StatRequest> stats) {
@@ -37,8 +36,6 @@ public record SettingRequest(
     public record StatRequest(
             @NotBlank @Size(max = 20) String label,
             @NotNull @PositiveOrZero @Max(value = MAX_STAT_VALUE, message = "999,999 이하여야 합니다.")
-            @JsonDeserialize(using = StrictIntegerDeserializer.class) Integer value,
-            @Size(max = 10) String unit,
-            @Size(max = 5) String suffix) {
+            @JsonDeserialize(using = StrictIntegerDeserializer.class) Integer value) {
     }
 }

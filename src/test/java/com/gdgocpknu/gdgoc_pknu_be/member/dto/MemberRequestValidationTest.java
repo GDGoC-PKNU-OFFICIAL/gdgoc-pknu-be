@@ -107,13 +107,13 @@ class MemberRequestValidationTest {
     }
 
     @Test
-    void 링크와_사진은_http_s_형식이어야_한다() {
+    void 사진과_GitHub은_http_s_형식이고_이메일은_이메일_형식이어야_한다() {
         MemberRequest request = core(r -> new MemberRequest(r.status(), r.role(), r.name(), "ftp://x/y.png",
                 r.department(), r.history(), r.interests(), r.part(), r.bio(),
-                new LinksRequest("github.com/me", "javascript:alert(1)"), r.consentConfirmed()));
+                new LinksRequest("github.com/me", "not-an-email"), r.consentConfirmed()));
 
         assertThat(fieldsOf(validator.validate(request)))
-                .containsExactlyInAnyOrder("photoUrl", "links.github", "links.homepage");
+                .containsExactlyInAnyOrder("photoUrl", "links.github", "links.email");
     }
 
     @Test

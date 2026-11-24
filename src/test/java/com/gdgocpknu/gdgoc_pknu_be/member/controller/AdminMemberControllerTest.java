@@ -189,7 +189,7 @@ class AdminMemberControllerTest {
 
         MemberRequest update = new MemberRequest(
                 MemberStatus.CORE, MemberRole.LEAD, "김리드", null, "소프트웨어학과",
-                List.of(), List.of("AI"), MemberPart.AI_ML, "새 소개", new LinksRequest(null, "https://kim.dev"), true);
+                List.of(), List.of("AI"), MemberPart.AI_ML, "새 소개", new LinksRequest(null, "kim@example.com"), true);
 
         mockMvc.perform(put("/api/admin/members/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -201,7 +201,7 @@ class AdminMemberControllerTest {
                 .andExpect(jsonPath("$.history").isEmpty())
                 .andExpect(jsonPath("$.interests.length()").value(1))
                 .andExpect(jsonPath("$.links.github").doesNotExist())
-                .andExpect(jsonPath("$.links.homepage").value("https://kim.dev"));
+                .andExpect(jsonPath("$.links.email").value("kim@example.com"));
 
         em.flush();
         em.clear();

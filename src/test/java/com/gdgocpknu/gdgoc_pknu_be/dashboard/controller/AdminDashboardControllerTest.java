@@ -94,7 +94,7 @@ class AdminDashboardControllerTest {
     @Test
     void 모집_상태를_설정에서_읽는다() throws Exception {
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON).content("""
-                        { "recruiting": true, "bannerText": "모집 중", "recruitPeriod": null,
+                        { "recruiting": true, "recruitPeriod": null,
                           "stats": [ { "label": "a", "value": 1 }, { "label": "b", "value": 2 },
                                      { "label": "c", "value": 3 }, { "label": "d", "value": 4 } ] }
                         """))

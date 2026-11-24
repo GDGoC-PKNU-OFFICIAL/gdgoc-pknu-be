@@ -57,23 +57,24 @@ public class Member extends BaseTimeEntity {
 
     private String githubUrl;
 
-    private String homepageUrl;
+    /** 공개 연락 이메일 (카드의 메일 아이콘). 동의를 받은 값만 넣는다 */
+    private String email;
 
     private Instant consentConfirmedAt;
 
     @Builder
     private Member(MemberStatus status, MemberRole role, String name, String photoUrl, String department,
                    List<String> history, List<String> interests, MemberPart part, String bio,
-                   String githubUrl, String homepageUrl, Instant consentConfirmedAt) {
+                   String githubUrl, String email, Instant consentConfirmedAt) {
         updateContent(status, role, name, photoUrl, department, history, interests, part, bio,
-                githubUrl, homepageUrl);
+                githubUrl, email);
         this.consentConfirmedAt = consentConfirmedAt;
     }
 
     /** PUT 전체 필드 교체. 등록(생성자)과 수정이 같은 메서드를 거친다. `consentConfirmedAt`은 바꾸지 않는다. */
     public void updateContent(MemberStatus status, MemberRole role, String name, String photoUrl, String department,
                               List<String> history, List<String> interests, MemberPart part, String bio,
-                              String githubUrl, String homepageUrl) {
+                              String githubUrl, String email) {
         this.status = status;
         this.role = role;
         this.name = name;
@@ -84,7 +85,7 @@ public class Member extends BaseTimeEntity {
         this.part = part;
         this.bio = bio;
         this.githubUrl = githubUrl;
-        this.homepageUrl = homepageUrl;
+        this.email = email;
     }
 
     private static List<String> copyOrEmpty(List<String> values) {
