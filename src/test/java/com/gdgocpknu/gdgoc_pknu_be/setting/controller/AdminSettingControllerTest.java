@@ -17,6 +17,7 @@ import com.gdgocpknu.gdgoc_pknu_be.setting.domain.StatValue;
 import com.gdgocpknu.gdgoc_pknu_be.setting.dto.SettingRequest;
 import com.gdgocpknu.gdgoc_pknu_be.setting.dto.SettingRequest.RecruitPeriodRequest;
 import com.gdgocpknu.gdgoc_pknu_be.setting.dto.SettingRequest.StatRequest;
+import com.gdgocpknu.gdgoc_pknu_be.support.FakeS3Client;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
@@ -70,6 +71,53 @@ class AdminSettingControllerTest {
         assertThat(count("site_stat")).isEqualTo(4);
     }
 
+    @Autowired
+    FakeS3Client s3;
+
+    private static final String HERO_KEY = "hero/8f1c0000-0000-4000-8000-0000000000aa.webp";
+    private static final String HERO_URL = "https://test-bucket.r2.dev/" + HERO_KEY;
+
+    @Test
+    void 히어로_사진과_보일_곳을_저장하고_비우면_기본_사진으로_돌아간다() throws Exception {
+        seed();
+        s3.reset();
+        s3.put(HERO_KEY, 2048, "image/webp");
+        SettingRequest base = request();
+
+        update(new SettingRequest(base.recruiting(), base.recruitPeriod(), base.stats(), HERO_URL, "40% 60%"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.heroImageUrl").value(HERO_URL))
+                .andExpect(jsonPath("$.heroImagePosition").value("40% 60%"));
+        em.flush();
+        em.clear();
+        mockMvc.perform(get("/api/settings"))
+                .andExpect(jsonPath("$.heroImageUrl").value(HERO_URL))
+                .andExpect(jsonPath("$.heroImagePosition").value("40% 60%"));
+
+        // 사진을 비우면 위치도 함께 지워져 응답에서 빠진다 (프론트는 기본 사진 · 기본 위치)
+        update(new SettingRequest(base.recruiting(), base.recruitPeriod(), base.stats(), null, "40% 60%"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.heroImageUrl").doesNotExist())
+                .andExpect(jsonPath("$.heroImagePosition").doesNotExist());
+    }
+
+    @Test
+    void 히어로_사진이_R2에_없거나_hero_폴더가_아니면_400이다() throws Exception {
+        seed();
+        s3.reset();
+        SettingRequest base = request();
+
+        update(new SettingRequest(base.recruiting(), base.recruitPeriod(), base.stats(), HERO_URL, null))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='heroImageUrl')]").exists());
+        update(new SettingRequest(base.recruiting(), base.recruitPeriod(), base.stats(),
+                "https://test-bucket.r2.dev/members/x.webp", null))
+                .andExpect(status().isBadRequest());
+        update(new SettingRequest(base.recruiting(), base.recruitPeriod(), base.stats(), null, "101% 0%"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field=='heroImagePosition')]").exists());
+    }
+
     @Test
     void 수정하면_전체_필드가_교체된다() throws Exception {
         seed();
@@ -77,7 +125,7 @@ class AdminSettingControllerTest {
         SettingRequest request = new SettingRequest(true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
                 List.of(new StatRequest("기수", 7), new StatRequest("멤버", 300),
-                        new StatRequest("프로젝트", 21), new StatRequest("행사", 50)));
+                        new StatRequest("프로젝트", 21), new StatRequest("행사", 50)), null, null);
 
         update(request).andExpect(status().isOk())
                 .andExpect(jsonPath("$.recruiting").value(true))
@@ -115,7 +163,7 @@ class AdminSettingControllerTest {
         seed();
         update(request()).andExpect(jsonPath("$.recruitPeriod.start").exists());
 
-        SettingRequest withoutPeriod = new SettingRequest(false, null, request().stats());
+        SettingRequest withoutPeriod = new SettingRequest(false, null, request().stats(), null, null);
         update(withoutPeriod).andExpect(status().isOk())
                 .andExpect(jsonPath("$.recruitPeriod").doesNotExist());
 
@@ -248,7 +296,7 @@ class AdminSettingControllerTest {
         // 모집 상태 · 기간은 그대로 두고 통계 값만 바꾼다.
         SettingRequest statsOnly = new SettingRequest(false, null,
                 List.of(new StatRequest("운영 기수", 9), new StatRequest("누적 멤버", 0),
-                        new StatRequest("완료 프로젝트", 0), new StatRequest("세션·이벤트", 0)));
+                        new StatRequest("완료 프로젝트", 0), new StatRequest("세션·이벤트", 0)), null, null);
 
         update(statsOnly).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stats[0].value").value(9))
@@ -262,7 +310,7 @@ class AdminSettingControllerTest {
         jdbc.update("UPDATE site_setting SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = 1");
         em.clear();
 
-        SettingRequest same = new SettingRequest(false, null, seedStatRequests());
+        SettingRequest same = new SettingRequest(false, null, seedStatRequests(), null, null);
 
         update(same).andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedAt").value(not(startsWith("2020-"))));
@@ -273,7 +321,7 @@ class AdminSettingControllerTest {
         seed();
         SettingRequest padded = new SettingRequest(true, null,
                 List.of(new StatRequest("  운영 기수  ", 1), new StatRequest("멤버", 0),
-                        new StatRequest("프로젝트", 0), new StatRequest("행사", 0)));
+                        new StatRequest("프로젝트", 0), new StatRequest("행사", 0)), null, null);
 
         update(padded).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stats[0].label").value("운영 기수"));
@@ -313,7 +361,7 @@ class AdminSettingControllerTest {
         return new SettingRequest(true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
                 List.of(new StatRequest("운영 기수", 3), new StatRequest("누적 멤버", 120),
-                        new StatRequest("완료 프로젝트", 15), new StatRequest("세션·이벤트", 40)));
+                        new StatRequest("완료 프로젝트", 15), new StatRequest("세션·이벤트", 40)), null, null);
     }
 
     private static String stat(String label, String value) {
