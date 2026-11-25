@@ -10,7 +10,9 @@ public enum UploadTarget implements CodedEnum {
     PROJECT("project", "projects/", "thumbnailUrl"),
     MEMBER("member", "members/", "photoUrl"),
     /** About What We Do 카드 사진. 에러는 activities 칸에 단다 (어느 카드인지는 폼이 업로드 중인 칸으로 안다) */
-    ABOUT("about", "about/", "activities");
+    ABOUT("about", "about/", "activities"),
+    /** 홈 히어로 배경 사진 (사이트 설정) */
+    HERO("hero", "hero/", "heroImageUrl");
 
     private final String code;
     private final String keyPrefix;

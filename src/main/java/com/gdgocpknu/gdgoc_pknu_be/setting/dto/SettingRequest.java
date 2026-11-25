@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
@@ -14,12 +15,16 @@ import java.util.List;
 /**
  * API 명세서 4-7 SettingRequest. 단일 레코드를 한 번에 교체한다(PUT은 전체 필드 교체).
  * 모집 기간은 비우려면 `recruitPeriod: null`을 보낸다. 통계는 순서가 곧 표시 순서이며 정확히 4개다.
+ * 히어로 사진은 비우면(`null`) 사이트 기본 사진을 쓴다. 새로 올린 사진은 저장할 때 R2에서 다시 확인한다.
  */
 public record SettingRequest(
         @NotNull Boolean recruiting,
         @Valid RecruitPeriodRequest recruitPeriod,
         @NotNull @Size(min = 4, max = 4, message = "통계는 정확히 4개여야 합니다.")
-        List<@NotNull @Valid StatRequest> stats) {
+        List<@NotNull @Valid StatRequest> stats,
+        @Pattern(regexp = "^https://\\S+$", message = "이미지 주소가 올바르지 않습니다.") @Size(max = 500)
+        String heroImageUrl,
+        @Pattern(regexp = "^(100|\\d{1,2})% (100|\\d{1,2})%$", message = "예: 35% 50%") String heroImagePosition) {
 
     /** 날짜는 `YYYY-MM-DD`이며 Jackson이 `LocalDate`로 읽는다. 형식이 틀리거나 없는 날짜는 역직렬화 단계에서 400이다. */
     @ValidRecruitPeriod

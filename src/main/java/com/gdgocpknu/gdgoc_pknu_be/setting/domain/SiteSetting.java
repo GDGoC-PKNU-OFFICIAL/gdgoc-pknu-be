@@ -42,6 +42,12 @@ public class SiteSetting {
 
     private LocalDate recruitEnd;
 
+    /** 홈 히어로 배경 사진 (R2 hero/). 없으면 프론트의 기본 사진 */
+    private String heroImageUrl;
+
+    /** 히어로 사진에서 보일 곳 (CSS object-position "가로% 세로%"). 없으면 프론트 기본 위치 */
+    private String heroImagePosition;
+
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
@@ -67,6 +73,12 @@ public class SiteSetting {
         requireStatCount(stats);
         applyRecruit(recruiting, recruitStart, recruitEnd);
         replaceStats(stats);
+    }
+
+    /** 히어로 사진 · 보일 곳을 바꾼다. 둘 다 null 이면 기본 사진으로 돌아간다. 사진이 없으면 위치도 지운다 */
+    public void updateHero(String imageUrl, String imagePosition) {
+        this.heroImageUrl = imageUrl;
+        this.heroImagePosition = imageUrl == null ? null : imagePosition;
     }
 
     /** 통계를 순서대로 덮어쓴다. `sort_order`가 전역 UNIQUE라 삭제 후 재삽입하면 INSERT가 먼저 나가 충돌한다. */

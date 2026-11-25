@@ -111,7 +111,7 @@ class SettingRequestValidationTest {
 
     @Test
     void 모집_상태가_없으면_위반이다() {
-        SettingRequest request = valid(r -> new SettingRequest(null, r.recruitPeriod(), r.stats()));
+        SettingRequest request = valid(r -> new SettingRequest(null, r.recruitPeriod(), r.stats(), null, null));
 
         assertThat(fieldsOf(validator.validate(request))).containsExactly("recruiting");
     }
@@ -121,11 +121,11 @@ class SettingRequestValidationTest {
     }
 
     private static SettingRequest withPeriod(SettingRequest r, RecruitPeriodRequest period) {
-        return new SettingRequest(r.recruiting(), period, r.stats());
+        return new SettingRequest(r.recruiting(), period, r.stats(), null, null);
     }
 
     private static SettingRequest withStats(SettingRequest r, List<StatRequest> stats) {
-        return new SettingRequest(r.recruiting(), r.recruitPeriod(), stats);
+        return new SettingRequest(r.recruiting(), r.recruitPeriod(), stats, null, null);
     }
 
 
@@ -141,6 +141,6 @@ class SettingRequestValidationTest {
         return customizer.apply(new SettingRequest(
                 true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
-                stats(4)));
+                stats(4), null, null));
     }
 }

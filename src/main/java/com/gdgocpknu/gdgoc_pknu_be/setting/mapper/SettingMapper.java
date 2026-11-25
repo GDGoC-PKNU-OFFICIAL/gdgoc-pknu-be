@@ -23,6 +23,8 @@ public class SettingMapper {
                 setting.getStats().stream()
                         .map(stat -> new SettingResponse.Stat(stat.getLabel(), stat.getValue()))
                         .toList(),
+                setting.getHeroImageUrl(),
+                setting.getHeroImagePosition(),
                 kstDates.toKst(setting.getUpdatedAt()));
     }
 }
