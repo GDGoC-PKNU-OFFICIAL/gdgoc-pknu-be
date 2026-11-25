@@ -187,7 +187,7 @@ class UploadVerificationIntegrationTest {
 
     private static String member(String photoUrl) {
         return """
-                { "status": "senior", "role": null, "name": "이시니", "photoUrl": %s, "department": "컴퓨터공학과",
+                { "status": "senior", "name": "이시니", "photoUrl": %s, "department": "컴퓨터공학과",
                   "history": [], "interests": [], "part": "backend", "bio": "소개", "links": {},
                   "consentConfirmed": true }
                 """.formatted(quoted(photoUrl));

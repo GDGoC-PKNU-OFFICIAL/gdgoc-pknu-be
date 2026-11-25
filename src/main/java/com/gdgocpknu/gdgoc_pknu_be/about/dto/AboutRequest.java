@@ -1,6 +1,8 @@
 package com.gdgocpknu.gdgoc_pknu_be.about.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -9,7 +11,7 @@ import java.util.List;
 
 /**
  * About 페이지 수정 요청 (PUT 전체 교체). 구역마다 배열이며, 순서가 곧 화면 순서다.
- * 고정된 선택지(묶음 · 모양 · 색 · 아이콘)는 코드값 문자열로 받는다. 규칙 슬러그 중복은 서비스가 검사한다.
+ * 고정된 선택지(모양 · 색 · 아이콘)는 코드값 문자열로 받는다. 규칙 슬러그 중복은 서비스가 검사한다.
  */
 public record AboutRequest(
         @NotNull @Size(min = 1, max = 5) List<@NotBlank @Size(max = 1000) String> identity,
@@ -20,17 +22,23 @@ public record AboutRequest(
     /** 업로드한 사진(https) 또는 사이트에 들어 있는 기본 그림(/images/…). 업로드 주소는 저장 시 R2에서 다시 확인한다. */
     static final String IMAGE_URL = "^(/images/[A-Za-z0-9._/-]+|https://\\S+)$";
 
+    /** 사진에서 카드에 보일 곳 — CSS object-position 의 "가로% 세로%" (각 0~100) */
+    static final String IMAGE_POSITION = "^(100|\\d{1,2})% (100|\\d{1,2})%$";
+
     public record ActivityRequest(
-            @NotBlank @Pattern(regexp = "activity|free-content", message = "묶음 값이 올바르지 않습니다.") String group,
             @NotBlank @Size(max = 30) String title,
-            @NotBlank @Size(max = 20) String cadence,
             @NotBlank @Size(max = 200) String description,
             @NotBlank
             @Pattern(regexp = "color|cover|square|top|artwork|logo|circles", message = "카드 모양 값이 올바르지 않습니다.")
             String layout,
             @Pattern(regexp = IMAGE_URL, message = "이미지 주소가 올바르지 않습니다.") @Size(max = 500) String imageUrl,
             @Pattern(regexp = IMAGE_URL, message = "이미지 주소가 올바르지 않습니다.") @Size(max = 500) String secondImageUrl,
-            @Pattern(regexp = "^\\d{1,3}% \\d{1,3}%$", message = "예: 35% 50%") String imagePosition,
+            @Pattern(regexp = IMAGE_POSITION, message = "예: 35% 50%") String imagePosition,
+            @Min(value = 100, message = "100% 이상이어야 합니다.") @Max(value = 300, message = "300% 이하여야 합니다.")
+            Integer imageZoom,
+            @Pattern(regexp = IMAGE_POSITION, message = "예: 35% 50%") String secondImagePosition,
+            @Min(value = 100, message = "100% 이상이어야 합니다.") @Max(value = 300, message = "300% 이하여야 합니다.")
+            Integer secondImageZoom,
             @NotBlank
             @Pattern(regexp = "auto|blue|green|coral|orange|navy|gray|purple|forest|plum", message = "색 값이 올바르지 않습니다.")
             String tone) {

@@ -1,7 +1,5 @@
 package com.gdgocpknu.gdgoc_pknu_be.member.dto;
 
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberPart;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -10,13 +8,13 @@ import java.util.List;
 public record AdminMemberResponse(
         Long id,
         MemberStatus status,
-        MemberRole role,
+        int sortOrder,
         String name,
         String photoUrl,
         String department,
         List<String> history,
         List<String> interests,
-        MemberPart part,
+        String part,
         String bio,
         MemberResponse.Links links,
         OffsetDateTime consentConfirmedAt,

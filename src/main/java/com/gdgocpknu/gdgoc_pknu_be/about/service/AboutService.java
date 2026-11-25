@@ -73,15 +73,21 @@ public class AboutService {
 
     private static AboutActivity toActivity(ActivityRequest request) {
         return new AboutActivity(
-                request.group(),
                 request.title().strip(),
-                request.cadence().strip(),
                 request.description().strip(),
                 request.layout(),
                 blankToNull(request.imageUrl()),
                 blankToNull(request.secondImageUrl()),
                 blankToNull(request.imagePosition()),
+                zoomOrNull(request.imageZoom()),
+                blankToNull(request.secondImagePosition()),
+                zoomOrNull(request.secondImageZoom()),
                 request.tone());
+    }
+
+    /** 100% 는 확대하지 않은 것과 같아 저장하지 않는다 (응답에서도 빠진다) */
+    private static Integer zoomOrNull(Integer zoom) {
+        return zoom == null || zoom == 100 ? null : zoom;
     }
 
     /** 규칙 슬러그는 상세 카드 주소(?rule=)라 겹치면 안 된다. 두 번째로 나온 칸에 에러를 단다. */

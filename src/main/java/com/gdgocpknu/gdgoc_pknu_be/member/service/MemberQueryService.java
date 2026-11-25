@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class MemberQueryService {
 
-    /** 관리자 목록 `sort` 허용 필드 (API 명세서 2-7). `sort`를 보내지 않으면 기본 정렬(구분 → 역할 → 이름)이다. */
+    /** 관리자 목록 `sort` 허용 필드 (API 명세서 2-7). `sort`를 보내지 않으면 기본 정렬(구분 → 표시 순서)이다. */
     private static final SortWhitelist ADMIN_SORTABLE = SortWhitelist.of("name", "updatedAt");
 
     /** 정렬 값이 같은 행이 페이지 경계에서 중복 · 누락되지 않도록 마지막에 붙이는 기준. */
@@ -39,15 +39,15 @@ public class MemberQueryService {
     private final MemberMapper memberMapper;
 
     /**
-     * 코어멤버 · 시니어 전체. 구분별 묶기 · 정렬은 프론트가 처리하지만(명세 2-1),
-     * 서버도 관리자 기본 정렬과 같은 순서로 내려 응답이 항상 같은 순서가 되게 한다.
+     * 코어멤버 · 시니어 전체를 공개 화면 순서(구분 → 관리자가 정한 표시 순서)로 내린다.
+     * 프론트는 구분별로 나누기만 하고 이 순서를 그대로 쓴다.
      */
     public List<MemberResponse> findAllForPublic() {
         return memberMapper.toPublicResponses(memberRepository.findAll(MemberSpecifications.defaultOrder()));
     }
 
     /**
-     * 관리자 목록(A-41). `sort`가 없으면 기본 정렬(구분 → 역할 순 → 이름), 있으면 `name` · `updatedAt` 중 하나다.
+     * 관리자 목록(A-41). `sort`가 없으면 기본 정렬(구분 → 표시 순서), 있으면 `name` · `updatedAt` 중 하나다.
      * 기본 정렬은 Specification이 쿼리에 직접 걸므로 이때 Pageable에는 Sort를 주지 않는다.
      */
     public PageResponse<AdminMemberResponse> findAllForAdmin(MemberSearchCond cond, int page, int size, String sort) {
@@ -66,9 +66,6 @@ public class MemberQueryService {
         }
         if (cond.status() != null) {
             specs.add(MemberSpecifications.status(cond.status()));
-        }
-        if (cond.role() != null) {
-            specs.add(MemberSpecifications.role(cond.role()));
         }
         if (defaultOrder) {
             specs.add(MemberSpecifications.defaultOrder());

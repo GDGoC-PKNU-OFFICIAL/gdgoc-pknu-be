@@ -76,24 +76,24 @@ class SchemaConstraintTest {
     }
 
     @Test
-    void 시니어에_role이_있으면_CHECK가_막는다() {
-        assertThatThrownBy(() -> insertMember("senior", "core"))
+    void 멤버_구분이_정해진_값이_아니면_CHECK가_막는다() {
+        assertThatThrownBy(() -> insertMember("lead", 1))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasMessageContaining("ck_member_status_role");
+                .hasMessageContaining("ck_member_status");
     }
 
     @Test
-    void 코어멤버에_role이_없으면_CHECK가_막는다() {
+    void 멤버_표시_순서는_비울_수_없다() {
         assertThatThrownBy(() -> insertMember("core", null))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasMessageContaining("ck_member_status_role");
+                .hasMessageContaining("sort_order");
     }
 
     @Test
-    void 코어멤버_role_있음_시니어_role_없음은_통과한다() {
+    void 멤버는_역할_없이_구분과_순서만으로_저장된다() {
         assertThatCode(() -> {
-            insertMember("core", "lead");
-            insertMember("senior", null);
+            insertMember("core", 1);
+            insertMember("senior", 1);
         }).doesNotThrowAnyException();
     }
 
@@ -139,9 +139,9 @@ class SchemaConstraintTest {
                 VALUES (?, 't', 's', 'team-project', CAST(? AS date), CAST(? AS date))""", slug, start, end);
     }
 
-    private void insertMember(String status, String role) {
+    private void insertMember(String status, Integer sortOrder) {
         jdbc.update("""
-                INSERT INTO member (status, role, name, department, part, bio, consent_confirmed_at)
-                VALUES (?, ?, '홍길동', '컴퓨터공학과', 'backend', '소개', now())""", status, role);
+                INSERT INTO member (status, sort_order, name, department, part, bio, consent_confirmed_at)
+                VALUES (?, ?, '홍길동', '컴퓨터공학과', 'backend', '소개', now())""", status, sortOrder);
     }
 }

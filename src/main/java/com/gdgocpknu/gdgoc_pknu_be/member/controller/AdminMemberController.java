@@ -1,9 +1,9 @@
 package com.gdgocpknu.gdgoc_pknu_be.member.controller;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.dto.PageResponse;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.AdminMemberResponse;
+import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberOrderRequest;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberRequest;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberSearchCond;
 import com.gdgocpknu.gdgoc_pknu_be.member.service.MemberCommandService;
@@ -37,18 +37,17 @@ public class AdminMemberController {
     private final MemberCommandService memberCommandService;
 
     /**
-     * `status` · `role`은 코드값(`core`, `part-lead`)으로 받는다. `sort`는 `필드,방향` 형식이며 허용 필드는
-     * `name` · `updatedAt` (API 명세서 1-6, 2-7). 보내지 않으면 구분 → 역할 순 → 이름 기본 정렬이다.
+     * `status`는 코드값(`core`, `senior`)으로 받는다. `sort`는 `필드,방향` 형식이며 허용 필드는
+     * `name` · `updatedAt` (API 명세서 1-6, 2-7). 보내지 않으면 구분 → 표시 순서(공개 화면 순서)다.
      */
     @GetMapping
     public PageResponse<AdminMemberResponse> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) MemberStatus status,
-            @RequestParam(required = false) MemberRole role,
             @RequestParam(defaultValue = "0") @PositiveOrZero int page,
             @RequestParam(defaultValue = "20") @Positive @Max(200) int size,
             @RequestParam(required = false) String sort) {
-        return memberQueryService.findAllForAdmin(new MemberSearchCond(q, status, role), page, size, sort);
+        return memberQueryService.findAllForAdmin(new MemberSearchCond(q, status), page, size, sort);
     }
 
     @GetMapping("/{id:\\d+}")
@@ -65,6 +64,13 @@ public class AdminMemberController {
     @PutMapping("/{id:\\d+}")
     public AdminMemberResponse update(@PathVariable Long id, @Valid @RequestBody MemberRequest request) {
         return memberCommandService.update(id, request);
+    }
+
+    /** 한 구분의 표시 순서를 바꾼다 (공개 Members 화면 순서). */
+    @PutMapping("/order")
+    public ResponseEntity<Void> reorder(@Valid @RequestBody MemberOrderRequest request) {
+        memberCommandService.reorder(request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id:\\d+}")

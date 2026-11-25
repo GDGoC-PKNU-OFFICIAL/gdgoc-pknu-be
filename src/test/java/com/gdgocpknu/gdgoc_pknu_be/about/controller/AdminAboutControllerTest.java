@@ -52,6 +52,10 @@ class AdminAboutControllerTest {
                 .andExpect(jsonPath("$.identity[0]").value("첫 문단"))
                 .andExpect(jsonPath("$.activities[0].layout").value("square"))
                 .andExpect(jsonPath("$.activities[0].secondImageUrl").doesNotExist())
+                .andExpect(jsonPath("$.activities[0].imagePosition").value("30% 40%"))
+                .andExpect(jsonPath("$.activities[0].imageZoom").value(150))
+                // 100% 는 확대하지 않은 것과 같아 저장하지 않는다
+                .andExpect(jsonPath("$.activities[0].secondImageZoom").doesNotExist())
                 .andExpect(jsonPath("$.rules[0].slug").value("code-of-conduct"))
                 .andExpect(jsonPath("$.faq[0].answer").value("답변"));
 
@@ -91,8 +95,8 @@ class AdminAboutControllerTest {
     private static AboutRequest request(String ruleSlug) {
         return new AboutRequest(
                 List.of("첫 문단"),
-                List.of(new ActivityRequest("activity", "정기 세션", "격주", "설명", "square",
-                        "/images/activities/session-photo.webp", null, null, "auto")),
+                List.of(new ActivityRequest("정기 세션", "설명", "square",
+                        "/images/activities/session-photo.webp", null, "30% 40%", 150, null, 100, "auto")),
                 List.of(new RuleRequest(ruleSlug, "행동 강령", "book", "## 제목\n- 항목")),
                 List.of(new FaqRequest("질문", "답변")));
     }

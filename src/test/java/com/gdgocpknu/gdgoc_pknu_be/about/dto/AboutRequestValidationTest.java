@@ -18,7 +18,12 @@ class AboutRequestValidationTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     static ActivityRequest activity(String layout, String imageUrl) {
-        return new ActivityRequest("activity", "정기 세션", "격주", "설명", layout, imageUrl, null, null, "auto");
+        return framed(layout, imageUrl, null, null);
+    }
+
+    static ActivityRequest framed(String layout, String imageUrl, String position, Integer zoom) {
+        return new ActivityRequest(
+                "정기 세션", "설명", layout, imageUrl, null, position, zoom, null, null, "auto");
     }
 
     static AboutRequest valid() {
@@ -45,13 +50,28 @@ class AboutRequestValidationTest {
     void 정해진_선택지_밖의_값은_위반이다() {
         AboutRequest request = new AboutRequest(
                 List.of("문단"),
-                List.of(new ActivityRequest("other", "제목", "주기", "설명", "poster", null, null, "가운데", "pink")),
+                List.of(new ActivityRequest(
+                        "제목", "설명", "poster", null, null, "가운데", null, "왼쪽", null, "pink")),
                 List.of(new RuleRequest("Bad Slug", "규칙", "star", "본문")),
                 List.of());
 
         assertThat(fieldsOf(validator.validate(request))).containsExactlyInAnyOrder(
-                "activities[0].group", "activities[0].layout", "activities[0].imagePosition",
-                "activities[0].tone", "rules[0].slug", "rules[0].icon");
+                "activities[0].layout", "activities[0].imagePosition",
+                "activities[0].secondImagePosition", "activities[0].tone", "rules[0].slug", "rules[0].icon");
+    }
+
+    @Test
+    void 위치는_0에서_100퍼센트_배율은_100에서_300퍼센트만_받는다() {
+        String photo = "/images/activities/a.webp";
+
+        assertThat(validator.validate(withActivity(framed("cover", photo, "0% 100%", 100)))).isEmpty();
+        assertThat(validator.validate(withActivity(framed("cover", photo, "35% 50%", 300)))).isEmpty();
+        assertThat(fieldsOf(validator.validate(withActivity(framed("cover", photo, "101% 50%", null)))))
+                .containsExactly("activities[0].imagePosition");
+        assertThat(fieldsOf(validator.validate(withActivity(framed("cover", photo, null, 99)))))
+                .containsExactly("activities[0].imageZoom");
+        assertThat(fieldsOf(validator.validate(withActivity(framed("cover", photo, null, 301)))))
+                .containsExactly("activities[0].imageZoom");
     }
 
     @Test
