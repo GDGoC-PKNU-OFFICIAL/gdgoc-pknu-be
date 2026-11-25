@@ -19,11 +19,9 @@ public class SettingMapper {
                 : new SettingResponse.RecruitPeriod(setting.getRecruitStart(), setting.getRecruitEnd());
         return new SettingResponse(
                 setting.isRecruiting(),
-                setting.getBannerText(),
                 period,
                 setting.getStats().stream()
-                        .map(stat -> new SettingResponse.Stat(
-                                stat.getLabel(), stat.getValue(), stat.getUnit(), stat.getSuffix()))
+                        .map(stat -> new SettingResponse.Stat(stat.getLabel(), stat.getValue()))
                         .toList(),
                 kstDates.toKst(setting.getUpdatedAt()));
     }

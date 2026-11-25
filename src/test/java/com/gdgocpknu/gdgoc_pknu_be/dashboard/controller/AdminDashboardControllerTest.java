@@ -12,9 +12,7 @@ import com.gdgocpknu.gdgoc_pknu_be.event.domain.Event;
 import com.gdgocpknu.gdgoc_pknu_be.event.domain.EventCategory;
 import com.gdgocpknu.gdgoc_pknu_be.event.domain.EventRepository;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.Member;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberPart;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRepository;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.Project;
 import com.gdgocpknu.gdgoc_pknu_be.project.domain.ProjectCategory;
@@ -94,7 +92,7 @@ class AdminDashboardControllerTest {
     @Test
     void 모집_상태를_설정에서_읽는다() throws Exception {
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON).content("""
-                        { "recruiting": true, "bannerText": "모집 중", "recruitPeriod": null,
+                        { "recruiting": true, "recruitPeriod": null,
                           "stats": [ { "label": "a", "value": 1 }, { "label": "b", "value": 2 },
                                      { "label": "c", "value": 3 }, { "label": "d", "value": 4 } ] }
                         """))
@@ -154,9 +152,9 @@ class AdminDashboardControllerTest {
 
     @Test
     void 멤버는_구분별로_센다() throws Exception {
-        member("코어", MemberStatus.CORE, MemberRole.LEAD);
-        member("시니어1", MemberStatus.SENIOR, null);
-        member("시니어2", MemberStatus.SENIOR, null);
+        member("코어", MemberStatus.CORE);
+        member("시니어1", MemberStatus.SENIOR);
+        member("시니어2", MemberStatus.SENIOR);
         flushAndClear();
 
         mockMvc.perform(get("/api/admin/dashboard").with(user("admin")))
@@ -169,7 +167,7 @@ class AdminDashboardControllerTest {
         Long projectId = project("p", null).getId();
         Long studyId = study("s", null).getId();
         Long eventId = event("일정", today, null, 0).getId();
-        Long memberId = member("홍길동", MemberStatus.CORE, MemberRole.LEAD).getId();
+        Long memberId = member("홍길동", MemberStatus.CORE).getId();
         Long oldProjectId = project("old", null).getId();
         Long oldestProjectId = project("oldest", null).getId();
         flushAndClear();
@@ -242,10 +240,10 @@ class AdminDashboardControllerTest {
                 .build());
     }
 
-    private Member member(String name, MemberStatus status, MemberRole role) {
+    private Member member(String name, MemberStatus status) {
         return memberRepository.save(Member.builder()
-                .status(status).role(role).name(name).department("컴퓨터공학과")
-                .history(List.of()).interests(List.of()).part(MemberPart.BACKEND).bio("소개")
+                .status(status).sortOrder(1).name(name).department("컴퓨터공학과")
+                .history(List.of()).interests(List.of()).part("백엔드").bio("소개")
                 .consentConfirmedAt(Instant.parse("2026-03-01T00:00:00Z"))
                 .build());
     }

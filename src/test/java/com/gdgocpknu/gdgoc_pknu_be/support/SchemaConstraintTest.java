@@ -76,31 +76,31 @@ class SchemaConstraintTest {
     }
 
     @Test
-    void 시니어에_role이_있으면_CHECK가_막는다() {
-        assertThatThrownBy(() -> insertMember("senior", "core"))
+    void 멤버_구분이_정해진_값이_아니면_CHECK가_막는다() {
+        assertThatThrownBy(() -> insertMember("lead", 1))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasMessageContaining("ck_member_status_role");
+                .hasMessageContaining("ck_member_status");
     }
 
     @Test
-    void 코어멤버에_role이_없으면_CHECK가_막는다() {
+    void 멤버_표시_순서는_비울_수_없다() {
         assertThatThrownBy(() -> insertMember("core", null))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasMessageContaining("ck_member_status_role");
+                .hasMessageContaining("sort_order");
     }
 
     @Test
-    void 코어멤버_role_있음_시니어_role_없음은_통과한다() {
+    void 멤버는_역할_없이_구분과_순서만으로_저장된다() {
         assertThatCode(() -> {
-            insertMember("core", "lead");
-            insertMember("senior", null);
+            insertMember("core", 1);
+            insertMember("senior", 1);
         }).doesNotThrowAnyException();
     }
 
     @Test
     void 사이트_설정은_id_1인_단일_행만_허용한다() {
         assertThatThrownBy(() -> jdbc.update(
-                "INSERT INTO site_setting (id, recruiting, banner_text) VALUES (2, true, '모집중')"))
+                "INSERT INTO site_setting (id, recruiting) VALUES (2, true)"))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_site_setting_single_row");
     }
@@ -108,15 +108,15 @@ class SchemaConstraintTest {
     @Test
     void 모집_기간은_둘_다_있거나_둘_다_없어야_한다() {
         assertThatThrownBy(() -> jdbc.update("""
-                INSERT INTO site_setting (id, recruiting, banner_text, recruit_start)
-                VALUES (1, true, '모집중', DATE '2026-09-01')"""))
+                INSERT INTO site_setting (id, recruiting, recruit_start)
+                VALUES (1, true, DATE '2026-09-01')"""))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_site_setting_recruit_period");
     }
 
     @Test
     void 통계는_순서_1에서_4까지만_저장할_수_있다() {
-        jdbc.update("INSERT INTO site_setting (id, recruiting, banner_text) VALUES (1, true, '모집중')");
+        jdbc.update("INSERT INTO site_setting (id, recruiting) VALUES (1, true)");
 
         assertThatThrownBy(() -> jdbc.update(
                 "INSERT INTO site_stat (setting_id, sort_order, label, value) VALUES (1, 5, '기수', 1)"))
@@ -139,9 +139,9 @@ class SchemaConstraintTest {
                 VALUES (?, 't', 's', 'team-project', CAST(? AS date), CAST(? AS date))""", slug, start, end);
     }
 
-    private void insertMember(String status, String role) {
+    private void insertMember(String status, Integer sortOrder) {
         jdbc.update("""
-                INSERT INTO member (status, role, name, department, part, bio, consent_confirmed_at)
-                VALUES (?, ?, '홍길동', '컴퓨터공학과', 'backend', '소개', now())""", status, role);
+                INSERT INTO member (status, sort_order, name, department, part, bio, consent_confirmed_at)
+                VALUES (?, ?, '홍길동', '컴퓨터공학과', 'backend', '소개', now())""", status, sortOrder);
     }
 }

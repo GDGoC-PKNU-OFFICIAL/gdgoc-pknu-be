@@ -59,7 +59,6 @@ class AdminSettingControllerTest {
         mockMvc.perform(get("/api/admin/settings").with(user("admin"))).andExpect(status().isNotFound());
 
         update(request()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.bannerText").value("2026년 2학기 신입 부원 모집"))
                 .andExpect(jsonPath("$.stats.length()").value(4));
 
         em.flush();
@@ -75,20 +74,17 @@ class AdminSettingControllerTest {
     void 수정하면_전체_필드가_교체된다() throws Exception {
         seed();
 
-        SettingRequest request = new SettingRequest(true, "새 배너",
+        SettingRequest request = new SettingRequest(true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
-                List.of(new StatRequest("기수", 7, null, "기"), new StatRequest("멤버", 300, "+", "명"),
-                        new StatRequest("프로젝트", 21, null, null), new StatRequest("행사", 50, null, null)));
+                List.of(new StatRequest("기수", 7), new StatRequest("멤버", 300),
+                        new StatRequest("프로젝트", 21), new StatRequest("행사", 50)));
 
         update(request).andExpect(status().isOk())
                 .andExpect(jsonPath("$.recruiting").value(true))
-                .andExpect(jsonPath("$.bannerText").value("새 배너"))
                 .andExpect(jsonPath("$.recruitPeriod.start").value("2026-09-01"))
                 .andExpect(jsonPath("$.recruitPeriod.end").value("2026-09-14"))
                 .andExpect(jsonPath("$.stats[*].label", contains("기수", "멤버", "프로젝트", "행사")))
-                .andExpect(jsonPath("$.stats[1].value").value(300))
-                .andExpect(jsonPath("$.stats[1].unit").value("+"))
-                .andExpect(jsonPath("$.stats[2].unit").doesNotExist());
+                .andExpect(jsonPath("$.stats[1].value").value(300));
 
         em.flush();
         em.clear();
@@ -119,7 +115,7 @@ class AdminSettingControllerTest {
         seed();
         update(request()).andExpect(jsonPath("$.recruitPeriod.start").exists());
 
-        SettingRequest withoutPeriod = new SettingRequest(false, "모집 마감", null, request().stats());
+        SettingRequest withoutPeriod = new SettingRequest(false, null, request().stats());
         update(withoutPeriod).andExpect(status().isOk())
                 .andExpect(jsonPath("$.recruitPeriod").doesNotExist());
 
@@ -161,7 +157,7 @@ class AdminSettingControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='stats')]").exists());
 
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"recruiting\": true, \"bannerText\": \"배너\", \"recruitPeriod\": null }"))
+                        .content("{ \"recruiting\": true, \"recruitPeriod\": null }"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='stats')]").exists());
     }
@@ -213,16 +209,15 @@ class AdminSettingControllerTest {
     }
 
     @Test
-    void 통계_label이_비어_있거나_배너_문구가_길면_400이다() throws Exception {
+    void 통계_label이_비어_있으면_400이다() throws Exception {
         String stats = "[" + stat("", "1") + "," + stat("멤버", "0") + "," + stat("프로젝트", "0") + "," + stat("행사", "0") + "]";
         String body = """
-                { "recruiting": true, "bannerText": "%s", "recruitPeriod": null, "stats": %s }
-                """.formatted("가".repeat(61), stats);
+                { "recruiting": true, "recruitPeriod": null, "stats": %s }
+                """.formatted(stats);
 
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors[?(@.field=='bannerText')]").exists())
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='stats[0].label')]").exists());
     }
 
@@ -232,7 +227,7 @@ class AdminSettingControllerTest {
         em.flush();
         em.clear();
         // PUT은 전체 필드 교체라 "안 보낸 필드는 그대로 둔다"로 해석하면 안 된다 (명세 1-4). recruiting 누락.
-        String body = "{ \"bannerText\": \"바뀐 배너\", \"recruitPeriod\": null, \"stats\": " + stats(4) + " }";
+        String body = "{ \"recruitPeriod\": null, \"stats\": " + stats(4) + " }";
 
         mockMvc.perform(put("/api/admin/settings").with(user("admin")).contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -240,7 +235,7 @@ class AdminSettingControllerTest {
                 .andExpect(jsonPath("$.fieldErrors[?(@.field=='recruiting')]").exists());
 
         mockMvc.perform(get("/api/admin/settings").with(user("admin")))
-                .andExpect(jsonPath("$.bannerText").value("기존 배너"));
+                .andExpect(jsonPath("$.recruiting").value(false));
     }
 
     @Test
@@ -250,10 +245,10 @@ class AdminSettingControllerTest {
         jdbc.update("UPDATE site_setting SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = 1");
         em.clear();
 
-        // 배너 · 모집 상태 · 기간은 그대로 두고 통계 값만 바꾼다.
-        SettingRequest statsOnly = new SettingRequest(false, "기존 배너", null,
-                List.of(new StatRequest("운영 기수", 9, null, null), new StatRequest("누적 멤버", 0, null, null),
-                        new StatRequest("완료 프로젝트", 0, null, null), new StatRequest("세션·이벤트", 0, null, null)));
+        // 모집 상태 · 기간은 그대로 두고 통계 값만 바꾼다.
+        SettingRequest statsOnly = new SettingRequest(false, null,
+                List.of(new StatRequest("운영 기수", 9), new StatRequest("누적 멤버", 0),
+                        new StatRequest("완료 프로젝트", 0), new StatRequest("세션·이벤트", 0)));
 
         update(statsOnly).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stats[0].value").value(9))
@@ -267,38 +262,34 @@ class AdminSettingControllerTest {
         jdbc.update("UPDATE site_setting SET updated_at = TIMESTAMPTZ '2020-01-01 00:00:00+09' WHERE id = 1");
         em.clear();
 
-        SettingRequest same = new SettingRequest(false, "기존 배너", null, seedStatRequests());
+        SettingRequest same = new SettingRequest(false, null, seedStatRequests());
 
         update(same).andExpect(status().isOk())
                 .andExpect(jsonPath("$.updatedAt").value(not(startsWith("2020-"))));
     }
 
     @Test
-    void 문자열은_앞뒤_공백을_제거한_뒤_검사하고_빈_unit_suffix는_생략한다() throws Exception {
+    void 문자열은_앞뒤_공백을_제거한_뒤_검사한다() throws Exception {
         seed();
-        SettingRequest padded = new SettingRequest(true, "  배너  ", null,
-                List.of(new StatRequest("  운영 기수  ", 1, "  ", ""), new StatRequest("멤버", 0, " + ", null),
-                        new StatRequest("프로젝트", 0, null, null), new StatRequest("행사", 0, null, null)));
+        SettingRequest padded = new SettingRequest(true, null,
+                List.of(new StatRequest("  운영 기수  ", 1), new StatRequest("멤버", 0),
+                        new StatRequest("프로젝트", 0), new StatRequest("행사", 0)));
 
         update(padded).andExpect(status().isOk())
-                .andExpect(jsonPath("$.bannerText").value("배너"))
-                .andExpect(jsonPath("$.stats[0].label").value("운영 기수"))
-                .andExpect(jsonPath("$.stats[0].unit").doesNotExist())
-                .andExpect(jsonPath("$.stats[0].suffix").doesNotExist())
-                .andExpect(jsonPath("$.stats[1].unit").value("+"));
+                .andExpect(jsonPath("$.stats[0].label").value("운영 기수"));
     }
 
     // ───────────────────────────── 도우미 ─────────────────────────────
 
     private void seed() {
-        siteSettingRepository.save(SiteSetting.create(false, "기존 배너", null, null, List.of(
-                new StatValue("운영 기수", 1, null, null), new StatValue("누적 멤버", 0, null, null),
-                new StatValue("완료 프로젝트", 0, null, null), new StatValue("세션·이벤트", 0, null, null))));
+        siteSettingRepository.save(SiteSetting.create(false, null, null, List.of(
+                new StatValue("운영 기수", 1), new StatValue("누적 멤버", 0),
+                new StatValue("완료 프로젝트", 0), new StatValue("세션·이벤트", 0))));
     }
 
     private static List<StatRequest> seedStatRequests() {
-        return List.of(new StatRequest("운영 기수", 1, null, null), new StatRequest("누적 멤버", 0, null, null),
-                new StatRequest("완료 프로젝트", 0, null, null), new StatRequest("세션·이벤트", 0, null, null));
+        return List.of(new StatRequest("운영 기수", 1), new StatRequest("누적 멤버", 0),
+                new StatRequest("완료 프로젝트", 0), new StatRequest("세션·이벤트", 0));
     }
 
     private ResultActions update(SettingRequest request) throws Exception {
@@ -319,10 +310,10 @@ class AdminSettingControllerTest {
     }
 
     private static SettingRequest request(String banner) {
-        return new SettingRequest(true, banner,
+        return new SettingRequest(true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
-                List.of(new StatRequest("운영 기수", 3, null, "기"), new StatRequest("누적 멤버", 120, null, "명"),
-                        new StatRequest("완료 프로젝트", 15, null, null), new StatRequest("세션·이벤트", 40, null, null)));
+                List.of(new StatRequest("운영 기수", 3), new StatRequest("누적 멤버", 120),
+                        new StatRequest("완료 프로젝트", 15), new StatRequest("세션·이벤트", 40)));
     }
 
     private static String stat(String label, String value) {
@@ -339,7 +330,7 @@ class AdminSettingControllerTest {
 
     /** 요청 모양을 직접 만들어 record로는 보낼 수 없는 값(소수 · 문자열 · 누락)을 시험한다. */
     private static String raw(String recruitPeriodFragment, String statsJson) {
-        return "{ \"recruiting\": true, \"bannerText\": \"배너\", " + recruitPeriodFragment
+        return "{ \"recruiting\": true, " + recruitPeriodFragment
                 + ", \"stats\": " + statsJson + " }";
     }
 }

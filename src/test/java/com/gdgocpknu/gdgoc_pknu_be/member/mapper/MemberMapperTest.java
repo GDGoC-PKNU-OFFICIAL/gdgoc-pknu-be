@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.gdgocpknu.gdgoc_pknu_be.common.support.KstDates;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.Member;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberPart;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.AdminMemberResponse;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberResponse;
@@ -28,8 +26,8 @@ class MemberMapperTest {
 
         assertThat(response.id()).isEqualTo(5L);
         assertThat(response.status()).isEqualTo(MemberStatus.CORE);
-        assertThat(response.role()).isEqualTo(MemberRole.PART_LEAD);
-        assertThat(response.part()).isEqualTo(MemberPart.AI_ML);
+        assertThat(response.sortOrder()).isEqualTo(2);
+        assertThat(response.part()).isEqualTo("AI·ML");
         assertThat(response.history()).containsExactly("2026 파트 리드");
         assertThat(response.interests()).containsExactly("LLM", "백엔드");
         assertThat(response.links()).isEqualTo(new MemberResponse.Links("https://github.com/gildong", null));
@@ -47,10 +45,10 @@ class MemberMapperTest {
     }
 
     @Test
-    void 시니어는_역할이_없고_링크가_비어_있어도_links_객체는_내려간다() {
+    void 사진_링크가_비어_있어도_links_객체는_내려간다() {
         Member senior = Member.builder()
                 .status(MemberStatus.SENIOR).name("이시니").department("컴퓨터공학과")
-                .history(List.of()).interests(List.of()).part(MemberPart.BACKEND).bio("소개")
+                .history(List.of()).interests(List.of()).part("백엔드").bio("소개")
                 .consentConfirmedAt(Instant.parse("2026-09-15T10:30:00Z"))
                 .build();
         ReflectionTestUtils.setField(senior, "createdAt", Instant.parse("2026-09-15T10:30:00Z"));
@@ -58,16 +56,15 @@ class MemberMapperTest {
 
         MemberResponse response = mapper.toPublicResponse(senior);
 
-        assertThat(response.role()).isNull();
         assertThat(response.photoUrl()).isNull();
         assertThat(response.links()).isEqualTo(new MemberResponse.Links(null, null));
     }
 
     private static Member core() {
         Member member = Member.builder()
-                .status(MemberStatus.CORE).role(MemberRole.PART_LEAD).name("홍길동")
+                .status(MemberStatus.CORE).sortOrder(2).name("홍길동")
                 .department("컴퓨터공학과").history(List.of("2026 파트 리드")).interests(List.of("LLM", "백엔드"))
-                .part(MemberPart.AI_ML).bio("함께 만드는 개발자")
+                .part("AI·ML").bio("함께 만드는 개발자")
                 .githubUrl("https://github.com/gildong")
                 .consentConfirmedAt(Instant.parse("2026-09-15T10:30:00Z"))
                 .build();

@@ -8,7 +8,9 @@ import com.gdgocpknu.gdgoc_pknu_be.common.support.CodedEnum;
 public enum UploadTarget implements CodedEnum {
 
     PROJECT("project", "projects/", "thumbnailUrl"),
-    MEMBER("member", "members/", "photoUrl");
+    MEMBER("member", "members/", "photoUrl"),
+    /** About What We Do 카드 사진. 에러는 activities 칸에 단다 (어느 카드인지는 폼이 업로드 중인 칸으로 안다) */
+    ABOUT("about", "about/", "activities");
 
     private final String code;
     private final String keyPrefix;

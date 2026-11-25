@@ -13,6 +13,7 @@ public record StudyResponse(
         String slug,
         String title,
         String summary,
+        List<String> description,
         String topic,
         PeriodStatus status,
         Period period,

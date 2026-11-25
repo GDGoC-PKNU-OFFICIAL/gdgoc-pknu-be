@@ -1,6 +1,5 @@
 package com.gdgocpknu.gdgoc_pknu_be.member.dto;
 
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 
 /**
@@ -8,9 +7,8 @@ import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
  *
  * @param q      이름 검색어. 앞뒤 공백을 제거하고, 비어 있으면 검색하지 않는다
  * @param status core | senior
- * @param role   lead | part-lead | core
  */
-public record MemberSearchCond(String q, MemberStatus status, MemberRole role) {
+public record MemberSearchCond(String q, MemberStatus status) {
 
     public MemberSearchCond {
         q = (q == null || q.isBlank()) ? null : q.strip();

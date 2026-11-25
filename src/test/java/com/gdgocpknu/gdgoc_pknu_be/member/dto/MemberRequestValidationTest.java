@@ -2,8 +2,6 @@ package com.gdgocpknu.gdgoc_pknu_be.member.dto;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberPart;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.member.dto.MemberRequest.LinksRequest;
 import jakarta.validation.ConstraintViolation;
@@ -34,22 +32,8 @@ class MemberRequestValidationTest {
     }
 
     @Test
-    void 코어멤버에_역할이_없으면_role에_위반이_달린다() {
-        MemberRequest request = core(r -> withRole(r, null));
-
-        assertThat(fieldsOf(validator.validate(request))).containsExactly("role");
-    }
-
-    @Test
-    void 시니어에_역할이_있으면_role에_위반이_달린다() {
-        MemberRequest request = senior(r -> withRole(r, MemberRole.LEAD));
-
-        assertThat(fieldsOf(validator.validate(request))).containsExactly("role");
-    }
-
-    @Test
-    void 구분이_없으면_구분만_위반이고_역할_검사는_건너뛴다() {
-        MemberRequest request = core(r -> new MemberRequest(null, null, r.name(), r.photoUrl(), r.department(),
+    void 구분이_없으면_구분에_위반이_달린다() {
+        MemberRequest request = core(r -> new MemberRequest(null, r.name(), r.photoUrl(), r.department(),
                 r.history(), r.interests(), r.part(), r.bio(), r.links(), r.consentConfirmed()));
 
         assertThat(fieldsOf(validator.validate(request))).containsExactly("status");
@@ -92,14 +76,14 @@ class MemberRequestValidationTest {
     void 빈_배열은_통과하지만_배열_필드_자체가_없으면_위반이다() {
         assertThat(validator.validate(core(r -> withInterests(withHistory(r, List.of()), List.of())))).isEmpty();
 
-        MemberRequest missing = core(r -> new MemberRequest(r.status(), r.role(), r.name(), r.photoUrl(),
+        MemberRequest missing = core(r -> new MemberRequest(r.status(), r.name(), r.photoUrl(),
                 r.department(), null, null, r.part(), r.bio(), r.links(), r.consentConfirmed()));
         assertThat(fieldsOf(validator.validate(missing))).containsExactlyInAnyOrder("history", "interests");
     }
 
     @Test
     void 글자_수_제한을_넘으면_위반이다() {
-        MemberRequest request = core(r -> new MemberRequest(r.status(), r.role(), "가".repeat(21), r.photoUrl(),
+        MemberRequest request = core(r -> new MemberRequest(r.status(), "가".repeat(21), r.photoUrl(),
                 "가".repeat(31), r.history(), r.interests(), r.part(), "가".repeat(61), r.links(),
                 r.consentConfirmed()));
 
@@ -107,18 +91,18 @@ class MemberRequestValidationTest {
     }
 
     @Test
-    void 링크와_사진은_http_s_형식이어야_한다() {
-        MemberRequest request = core(r -> new MemberRequest(r.status(), r.role(), r.name(), "ftp://x/y.png",
+    void 사진과_GitHub은_http_s_형식이고_이메일은_이메일_형식이어야_한다() {
+        MemberRequest request = core(r -> new MemberRequest(r.status(), r.name(), "ftp://x/y.png",
                 r.department(), r.history(), r.interests(), r.part(), r.bio(),
-                new LinksRequest("github.com/me", "javascript:alert(1)"), r.consentConfirmed()));
+                new LinksRequest("github.com/me", "not-an-email"), r.consentConfirmed()));
 
         assertThat(fieldsOf(validator.validate(request)))
-                .containsExactlyInAnyOrder("photoUrl", "links.github", "links.homepage");
+                .containsExactlyInAnyOrder("photoUrl", "links.github", "links.email");
     }
 
     @Test
     void links가_없으면_위반이다() {
-        MemberRequest request = core(r -> new MemberRequest(r.status(), r.role(), r.name(), r.photoUrl(),
+        MemberRequest request = core(r -> new MemberRequest(r.status(), r.name(), r.photoUrl(),
                 r.department(), r.history(), r.interests(), r.part(), r.bio(), null, r.consentConfirmed()));
 
         assertThat(fieldsOf(validator.validate(request))).containsExactly("links");
@@ -128,37 +112,32 @@ class MemberRequestValidationTest {
         return violations.stream().map(v -> v.getPropertyPath().toString()).collect(Collectors.toSet());
     }
 
-    private static MemberRequest withRole(MemberRequest r, MemberRole role) {
-        return new MemberRequest(r.status(), role, r.name(), r.photoUrl(), r.department(), r.history(),
-                r.interests(), r.part(), r.bio(), r.links(), r.consentConfirmed());
-    }
-
     private static MemberRequest withConsent(MemberRequest r, Boolean consent) {
-        return new MemberRequest(r.status(), r.role(), r.name(), r.photoUrl(), r.department(), r.history(),
+        return new MemberRequest(r.status(), r.name(), r.photoUrl(), r.department(), r.history(),
                 r.interests(), r.part(), r.bio(), r.links(), consent);
     }
 
     private static MemberRequest withHistory(MemberRequest r, List<String> history) {
-        return new MemberRequest(r.status(), r.role(), r.name(), r.photoUrl(), r.department(), history,
+        return new MemberRequest(r.status(), r.name(), r.photoUrl(), r.department(), history,
                 r.interests(), r.part(), r.bio(), r.links(), r.consentConfirmed());
     }
 
     private static MemberRequest withInterests(MemberRequest r, List<String> interests) {
-        return new MemberRequest(r.status(), r.role(), r.name(), r.photoUrl(), r.department(), r.history(),
+        return new MemberRequest(r.status(), r.name(), r.photoUrl(), r.department(), r.history(),
                 interests, r.part(), r.bio(), r.links(), r.consentConfirmed());
     }
 
     private static MemberRequest core(UnaryOperator<MemberRequest> customizer) {
         return customizer.apply(new MemberRequest(
-                MemberStatus.CORE, MemberRole.PART_LEAD, "홍길동", "https://example.r2.dev/members/a.webp", "컴퓨터공학과",
-                List.of("2026 GDGoC PKNU 파트 리드"), List.of("백엔드", "클라우드"), MemberPart.BACKEND,
+                MemberStatus.CORE, "홍길동", "https://example.r2.dev/members/a.webp", "컴퓨터공학과",
+                List.of("2026 GDGoC PKNU 파트 리드"), List.of("백엔드", "클라우드"), "백엔드",
                 "함께 만드는 개발자", new LinksRequest("https://github.com/gildong", null), true));
     }
 
     private static MemberRequest senior(UnaryOperator<MemberRequest> customizer) {
         return customizer.apply(new MemberRequest(
-                MemberStatus.SENIOR, null, "이시니", null, "컴퓨터공학과",
-                List.of(), List.of("클라우드"), MemberPart.BACKEND,
+                MemberStatus.SENIOR, "이시니", null, "컴퓨터공학과",
+                List.of(), List.of("클라우드"), "백엔드",
                 "졸업해도 연결되는 개발자", new LinksRequest(null, null), true));
     }
 }

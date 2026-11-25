@@ -8,9 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.Member;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberPart;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRepository;
-import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberRole;
 import com.gdgocpknu.gdgoc_pknu_be.member.domain.MemberStatus;
 import com.gdgocpknu.gdgoc_pknu_be.support.IntegrationTest;
 import jakarta.persistence.EntityManager;
@@ -48,26 +46,26 @@ class AdminMemberListTest {
     // ───────────────────────────── 기본 정렬 ─────────────────────────────
 
     @Test
-    void 기본_정렬은_구분_역할_이름_순이다() throws Exception {
+    void 기본_정렬은_구분_표시_순서_순이고_같은_순서면_먼저_등록한_순이다() throws Exception {
         save(senior("나시니"));
-        save(core("다코어", MemberRole.CORE));
-        save(core("라파트", MemberRole.PART_LEAD));
-        save(core("가리드", MemberRole.LEAD));
-        save(core("가코어", MemberRole.CORE));
+        save(core("다코어", 4));
+        save(core("라파트", 2));
+        save(core("가리드", 1));
+        save(core("가코어", 3));
         save(senior("가시니"));
         flushAndClear();
 
         mockMvc.perform(list())
-                .andExpect(jsonPath("$.items[*].name", contains("가리드", "라파트", "가코어", "다코어", "가시니", "나시니")));
+                .andExpect(jsonPath("$.items[*].name", contains("가리드", "라파트", "가코어", "다코어", "나시니", "가시니")));
     }
 
     @Test
     void 기본_정렬은_페이지를_나눠도_유지되고_전체_건수가_맞다() throws Exception {
         save(senior("마시니"));
-        save(core("다코어", MemberRole.CORE));
-        save(core("라파트", MemberRole.PART_LEAD));
-        save(core("가리드", MemberRole.LEAD));
-        save(core("가코어", MemberRole.CORE));
+        save(core("다코어", 4));
+        save(core("라파트", 2));
+        save(core("가리드", 1));
+        save(core("가코어", 3));
         flushAndClear();
 
         mockMvc.perform(list().param("size", "2").param("page", "0"))
@@ -82,9 +80,9 @@ class AdminMemberListTest {
 
     @Test
     void 필터와_기본_정렬을_함께_써도_정렬이_유지된다() throws Exception {
-        save(core("다코어", MemberRole.CORE));
-        save(core("가코어", MemberRole.CORE));
-        save(core("나리드", MemberRole.LEAD));
+        save(core("다코어", 3));
+        save(core("가코어", 2));
+        save(core("나리드", 1));
         save(senior("가시니"));
         flushAndClear();
 
@@ -97,8 +95,8 @@ class AdminMemberListTest {
 
     @Test
     void q는_이름을_대소문자_구분_없이_부분_일치로_찾는다() throws Exception {
-        save(core("Kim Gildong", MemberRole.CORE));
-        save(core("박부경", MemberRole.CORE));
+        save(core("Kim Gildong", 1));
+        save(core("박부경", 1));
         flushAndClear();
 
         mockMvc.perform(list().param("q", "gILD"))
@@ -110,8 +108,8 @@ class AdminMemberListTest {
 
     @Test
     void q의_퍼센트와_밑줄은_와일드카드가_아니라_글자로_찾는다() throws Exception {
-        save(core("100% 열정", MemberRole.CORE));
-        save(core("1000 열정", MemberRole.CORE));
+        save(core("100% 열정", 1));
+        save(core("1000 열정", 1));
         flushAndClear();
 
         mockMvc.perform(list().param("q", "100%"))
@@ -122,7 +120,7 @@ class AdminMemberListTest {
 
     @Test
     void 빈_q는_검색하지_않는다() throws Exception {
-        save(core("가", MemberRole.CORE));
+        save(core("가", 1));
         save(senior("나"));
         flushAndClear();
 
@@ -132,7 +130,7 @@ class AdminMemberListTest {
 
     @Test
     void status는_코드값으로_거른다() throws Exception {
-        save(core("가코어", MemberRole.CORE));
+        save(core("가코어", 1));
         save(senior("나시니"));
         flushAndClear();
 
@@ -141,26 +139,15 @@ class AdminMemberListTest {
     }
 
     @Test
-    void role은_코드값으로_거른다() throws Exception {
-        save(core("가리드", MemberRole.LEAD));
-        save(core("나파트", MemberRole.PART_LEAD));
-        save(core("다코어", MemberRole.CORE));
-        flushAndClear();
-
-        mockMvc.perform(list().param("role", "part-lead"))
-                .andExpect(jsonPath("$.items[*].name", contains("나파트")));
-    }
-
-    @Test
     void 여러_조건은_AND로_결합한다() throws Exception {
-        save(core("김리드", MemberRole.LEAD));
-        save(core("김코어", MemberRole.CORE));
-        save(core("박리드", MemberRole.LEAD));
+        save(core("김리드", 1));
+        save(core("김코어", 1));
+        save(core("박리드", 1));
         save(senior("김시니"));
         flushAndClear();
 
-        mockMvc.perform(list().param("q", "김").param("status", "core").param("role", "lead"))
-                .andExpect(jsonPath("$.items[*].name", contains("김리드")));
+        mockMvc.perform(list().param("q", "김").param("status", "core"))
+                .andExpect(jsonPath("$.items[*].name", contains("김리드", "김코어")));
     }
 
     // ───────────────────────────── 정렬 ─────────────────────────────
@@ -168,8 +155,8 @@ class AdminMemberListTest {
     @Test
     void sort로_이름_오름차순_내림차순_정렬한다() throws Exception {
         save(senior("다"));
-        save(core("가", MemberRole.CORE));
-        save(core("나", MemberRole.LEAD));
+        save(core("가", 1));
+        save(core("나", 1));
         flushAndClear();
 
         mockMvc.perform(list().param("sort", "name,asc"))
@@ -180,8 +167,8 @@ class AdminMemberListTest {
 
     @Test
     void sort로_최근_수정순_정렬한다() throws Exception {
-        Long first = save(core("첫째", MemberRole.CORE));
-        Long second = save(core("둘째", MemberRole.CORE));
+        Long first = save(core("첫째", 1));
+        Long second = save(core("둘째", 1));
         flushAndClear();
         jdbc.update("UPDATE member SET updated_at = TIMESTAMPTZ '2026-01-01 00:00:00+09' WHERE id = ?", first);
         jdbc.update("UPDATE member SET updated_at = TIMESTAMPTZ '2025-01-01 00:00:00+09' WHERE id = ?", second);
@@ -192,9 +179,9 @@ class AdminMemberListTest {
 
     @Test
     void 이름이_같으면_id_역순으로_고정되어_페이지가_겹치지_않는다() throws Exception {
-        save(core("동명", MemberRole.CORE));
-        save(core("동명", MemberRole.CORE));
-        save(core("동명", MemberRole.CORE));
+        save(core("동명", 1));
+        save(core("동명", 1));
+        save(core("동명", 1));
         flushAndClear();
 
         String page0 = mockMvc.perform(list().param("sort", "name,asc").param("size", "2").param("page", "0"))
@@ -223,13 +210,10 @@ class AdminMemberListTest {
     }
 
     @Test
-    void 정의되지_않은_status_role_코드값은_400이다() throws Exception {
+    void 정의되지_않은_status_코드값은_400이다() throws Exception {
         mockMvc.perform(list().param("status", "alumni"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("status"));
-        mockMvc.perform(list().param("role", "captain"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors[0].field").value("role"));
     }
 
     @Test
@@ -244,7 +228,7 @@ class AdminMemberListTest {
     @Test
     void 목록_조회는_목록과_건수_두_번의_쿼리로_끝난다() throws Exception {
         for (int i = 0; i < 25; i++) {
-            save(core("멤버" + i, MemberRole.CORE));
+            save(core("멤버" + i, i + 1));
         }
         flushAndClear();
         Statistics statistics = em.getEntityManagerFactory().unwrap(SessionFactory.class).getStatistics();
@@ -268,17 +252,17 @@ class AdminMemberListTest {
         return memberRepository.save(builder.build()).getId();
     }
 
-    private static Member.MemberBuilder core(String name, MemberRole role) {
+    private static Member.MemberBuilder core(String name, int sortOrder) {
         return Member.builder()
-                .status(MemberStatus.CORE).role(role).name(name).department("컴퓨터공학과")
-                .history(List.of()).interests(List.of()).part(MemberPart.BACKEND).bio("소개")
+                .status(MemberStatus.CORE).sortOrder(sortOrder).name(name).department("컴퓨터공학과")
+                .history(List.of()).interests(List.of()).part("백엔드").bio("소개")
                 .consentConfirmedAt(Instant.parse("2026-03-01T00:00:00Z"));
     }
 
     private static Member.MemberBuilder senior(String name) {
         return Member.builder()
                 .status(MemberStatus.SENIOR).name(name).department("컴퓨터공학과")
-                .history(List.of()).interests(List.of()).part(MemberPart.BACKEND).bio("소개")
+                .history(List.of()).interests(List.of()).part("백엔드").bio("소개")
                 .consentConfirmedAt(Instant.parse("2026-03-01T00:00:00Z"));
     }
 

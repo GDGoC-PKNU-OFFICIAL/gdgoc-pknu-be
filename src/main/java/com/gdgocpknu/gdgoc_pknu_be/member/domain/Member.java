@@ -19,7 +19,7 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * 멤버(코어멤버 · 시니어). 프로젝트 · 스터디 참여자와는 연결하지 않는다(참여자는 이름 문자열).
- * 코어멤버는 역할이 필수, 시니어는 역할이 없어야 하며 DB CHECK로도 막는다(`ck_member_status_role`).
+ * 공개 화면 순서는 구분(코어멤버 · 시니어)마다 관리자가 정하는 `sortOrder`(1부터)다 — 역할은 없앴다(V7).
  * `consentConfirmedAt`(공개 동의 확인 시각)은 등록 때 한 번 기록하고 이후 수정에서는 바꾸지 않는다.
  */
 @Getter
@@ -35,8 +35,8 @@ public class Member extends BaseTimeEntity {
     @Convert(converter = MemberStatusConverter.class)
     private MemberStatus status;
 
-    @Convert(converter = MemberRoleConverter.class)
-    private MemberRole role;
+    /** 같은 구분 안에서의 표시 순서 (1부터, 작을수록 앞). 순서 바꾸기 · 등록 · 구분 변경 때만 바뀐다 */
+    private int sortOrder;
 
     private String name;
 
@@ -50,32 +50,37 @@ public class Member extends BaseTimeEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> interests = new ArrayList<>();
 
-    @Convert(converter = MemberPartConverter.class)
-    private MemberPart part;
+    /** 분야 — 관리자가 직접 적는 글자 (예: "백엔드", "DevOps"). 카드에 그대로 보인다 */
+    private String part;
 
     private String bio;
 
     private String githubUrl;
 
-    private String homepageUrl;
+    /** 공개 연락 이메일 (카드의 메일 아이콘). 동의를 받은 값만 넣는다 */
+    private String email;
 
     private Instant consentConfirmedAt;
 
     @Builder
-    private Member(MemberStatus status, MemberRole role, String name, String photoUrl, String department,
-                   List<String> history, List<String> interests, MemberPart part, String bio,
-                   String githubUrl, String homepageUrl, Instant consentConfirmedAt) {
-        updateContent(status, role, name, photoUrl, department, history, interests, part, bio,
-                githubUrl, homepageUrl);
+    private Member(MemberStatus status, String name, String photoUrl, String department,
+                   List<String> history, List<String> interests, String part, String bio,
+                   String githubUrl, String email, Instant consentConfirmedAt, int sortOrder) {
+        updateContent(status, name, photoUrl, department, history, interests, part, bio, githubUrl, email);
         this.consentConfirmedAt = consentConfirmedAt;
+        this.sortOrder = sortOrder;
+    }
+
+    /** 표시 순서를 바꾼다 (순서 바꾸기 · 구분이 바뀌어 다른 목록 맨 뒤로 갈 때) */
+    public void moveTo(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     /** PUT 전체 필드 교체. 등록(생성자)과 수정이 같은 메서드를 거친다. `consentConfirmedAt`은 바꾸지 않는다. */
-    public void updateContent(MemberStatus status, MemberRole role, String name, String photoUrl, String department,
-                              List<String> history, List<String> interests, MemberPart part, String bio,
-                              String githubUrl, String homepageUrl) {
+    public void updateContent(MemberStatus status, String name, String photoUrl, String department,
+                              List<String> history, List<String> interests, String part, String bio,
+                              String githubUrl, String email) {
         this.status = status;
-        this.role = role;
         this.name = name;
         this.photoUrl = photoUrl;
         this.department = department;
@@ -84,7 +89,7 @@ public class Member extends BaseTimeEntity {
         this.part = part;
         this.bio = bio;
         this.githubUrl = githubUrl;
-        this.homepageUrl = homepageUrl;
+        this.email = email;
     }
 
     private static List<String> copyOrEmpty(List<String> values) {

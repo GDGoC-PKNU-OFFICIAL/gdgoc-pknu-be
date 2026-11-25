@@ -19,7 +19,7 @@ public class MemberMapper {
         return new MemberResponse(
                 member.getId(),
                 member.getStatus(),
-                member.getRole(),
+                member.getSortOrder(),
                 member.getName(),
                 member.getPhotoUrl(),
                 member.getDepartment(),
@@ -40,7 +40,7 @@ public class MemberMapper {
         return new AdminMemberResponse(
                 member.getId(),
                 member.getStatus(),
-                member.getRole(),
+                member.getSortOrder(),
                 member.getName(),
                 member.getPhotoUrl(),
                 member.getDepartment(),
@@ -55,6 +55,6 @@ public class MemberMapper {
     }
 
     private static MemberResponse.Links links(Member member) {
-        return new MemberResponse.Links(member.getGithubUrl(), member.getHomepageUrl());
+        return new MemberResponse.Links(member.getGithubUrl(), member.getEmail());
     }
 }

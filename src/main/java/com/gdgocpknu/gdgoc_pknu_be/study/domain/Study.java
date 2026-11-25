@@ -16,6 +16,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * 스터디. 현재/과거 status는 저장하지 않고 period_end로 조회 시 계산한다(프로젝트와 같은 규칙, PeriodStatus).
@@ -47,6 +49,10 @@ public class Study extends BaseTimeEntity {
 
     private String format;
 
+    /** 상세 카드의 스터디 소개. 문단 단위 (프로젝트 description 과 같은 모양). 비어 있으면 화면이 소개 칸을 그리지 않는다. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    private List<String> description = new ArrayList<>();
+
     /** 참여자(리더 제외). 입력 순서는 sortOrder로 보존한다. */
     @OneToMany(mappedBy = "study", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
@@ -58,8 +64,8 @@ public class Study extends BaseTimeEntity {
 
     @Builder
     private Study(String slug, String title, String summary, String topic, LocalDate periodStart,
-                  LocalDate periodEnd, String leader, String format) {
-        updateContent(slug, title, summary, topic, periodStart, periodEnd, leader, format);
+                  LocalDate periodEnd, String leader, String format, List<String> description) {
+        updateContent(slug, title, summary, topic, periodStart, periodEnd, leader, format, description);
     }
 
     /**
@@ -67,7 +73,7 @@ public class Study extends BaseTimeEntity {
      * 참여자 · 결과물은 각각 clear 후 add로 다시 채운다.
      */
     public void updateContent(String slug, String title, String summary, String topic, LocalDate periodStart,
-                              LocalDate periodEnd, String leader, String format) {
+                              LocalDate periodEnd, String leader, String format, List<String> description) {
         this.slug = slug;
         this.title = title;
         this.summary = summary;
@@ -77,6 +83,7 @@ public class Study extends BaseTimeEntity {
         this.leader = leader;
         // 폼의 빈 입력("")은 "값 없음"이다. null로 저장해야 응답에서 생략된다(non_null은 빈 문자열을 남긴다).
         this.format = (format == null || format.isBlank()) ? null : format;
+        this.description = description == null ? new ArrayList<>() : new ArrayList<>(description);
     }
 
     public void addParticipant(String name) {

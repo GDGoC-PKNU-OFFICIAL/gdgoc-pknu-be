@@ -108,7 +108,7 @@ class AdminStudyControllerTest {
                 "새 제목", "editable", "새 요약", "AI",
                 new PeriodRequest("2026.01", null), "박리더",
                 List.of("최참여"), null,
-                List.of(new OutputRequest("새 자료", "https://example.com/new")));
+                List.of(new OutputRequest("새 자료", "https://example.com/new")), null);
 
         mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -137,7 +137,7 @@ class AdminStudyControllerTest {
 
         StudyRequest update = new StudyRequest(
                 "스프링 스터디", "to-empty", "요약", "Backend",
-                new PeriodRequest("2026.03", "2026.06"), "홍길동", List.of(), null, List.of());
+                new PeriodRequest("2026.03", "2026.06"), "홍길동", List.of(), null, List.of(), null);
 
         mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -244,7 +244,7 @@ class AdminStudyControllerTest {
 
         StudyRequest update = new StudyRequest(
                 "바뀐 제목", "touch-me", "스프링 부트 기초부터 JPA까지", "Backend",
-                new PeriodRequest("2026.03", "2026.06"), "홍길동", List.of(), null, List.of());
+                new PeriodRequest("2026.03", "2026.06"), "홍길동", List.of(), null, List.of(), null);
 
         mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -263,7 +263,7 @@ class AdminStudyControllerTest {
                 "스프링 스터디", "children-only", "스프링 부트 기초부터 JPA까지", "Backend",
                 new PeriodRequest("2026.03", "2026.06"), "홍길동",
                 List.of("새참여자"), "주 1회 온라인",
-                List.of(new OutputRequest("회고록", "https://velog.io/@gdgoc/children-only")));
+                List.of(new OutputRequest("회고록", "https://velog.io/@gdgoc/children-only")), null);
 
         mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(update)))
@@ -300,7 +300,7 @@ class AdminStudyControllerTest {
                 paddedTitle, " trimmed-slug ", " 요약 ", " Backend ",
                 new PeriodRequest(" 2026.03 ", null), " 홍길동 ",
                 List.of(" 김부경 "), " 주 1회 ",
-                List.of(new OutputRequest(" 회고록 ", " https://velog.io/@gdgoc ")));
+                List.of(new OutputRequest(" 회고록 ", " https://velog.io/@gdgoc ")), null);
 
         mockMvc.perform(post("/api/admin/studies").with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(request)))
@@ -318,12 +318,12 @@ class AdminStudyControllerTest {
     void format을_빈_문자열이나_공백으로_보내면_null로_저장되고_응답에서_생략된다() throws Exception {
         StudyRequest blank = new StudyRequest(
                 "스프링 스터디", "blank-format", "요약", "Backend",
-                new PeriodRequest("2026.03", null), "홍길동", List.of(), "   ", List.of());
+                new PeriodRequest("2026.03", null), "홍길동", List.of(), "   ", List.of(), null);
         Long id = createAndGetId(blank);
 
         StudyRequest empty = new StudyRequest(
                 "스프링 스터디", "blank-format", "요약", "Backend",
-                new PeriodRequest("2026.03", null), "홍길동", List.of(), "", List.of());
+                new PeriodRequest("2026.03", null), "홍길동", List.of(), "", List.of(), null);
         mockMvc.perform(put("/api/admin/studies/{id}", id).with(user("admin"))
                         .contentType(MediaType.APPLICATION_JSON).content(json(empty)))
                 .andExpect(status().isOk())
@@ -340,6 +340,26 @@ class AdminStudyControllerTest {
                   "period": { "start": "2026.03", "end": null }, "leader": "홍길동",
                   "participants": %s, "format": null, "outputs": %s }
                 """.formatted(slug, participants, outputs);
+    }
+
+    @Test
+    void 소개를_보내면_문단_순서대로_저장되고_생략하면_빈_배열이다() throws Exception {
+        StudyRequest base = request("with-description");
+        StudyRequest withDescription = new StudyRequest(
+                base.title(), base.slug(), base.summary(), base.topic(), base.period(), base.leader(),
+                base.participants(), base.format(), base.outputs(), List.of("첫 문단", "둘째 문단"));
+
+        Long id = createAndGetId(withDescription);
+        mockMvc.perform(get("/api/admin/studies/" + id).with(user("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description[0]").value("첫 문단"))
+                .andExpect(jsonPath("$.description[1]").value("둘째 문단"));
+
+        // description 을 보내지 않는 예전 요청도 받고, 소개는 비워진다 (PUT 전체 교체)
+        mockMvc.perform(put("/api/admin/studies/" + id).with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(base)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").isEmpty());
     }
 
     private Long createAndGetId(StudyRequest request) throws Exception {
@@ -360,6 +380,6 @@ class AdminStudyControllerTest {
                 "스프링 스터디", slug, "스프링 부트 기초부터 JPA까지", "Backend",
                 new PeriodRequest("2026.03", "2026.06"), "홍길동",
                 List.of("김부경", "이서울"), "주 1회 온라인",
-                List.of(new OutputRequest("회고록", "https://velog.io/@gdgoc/" + slug)));
+                List.of(new OutputRequest("회고록", "https://velog.io/@gdgoc/" + slug)), null);
     }
 }

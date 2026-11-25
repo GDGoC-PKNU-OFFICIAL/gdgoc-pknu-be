@@ -26,7 +26,9 @@ public record StudyRequest(
         @NotBlank @Size(max = 20) String leader,
         @NotNull @Size(max = 30) List<@NotBlank @Size(max = 20) String> participants,
         @Size(max = 30) String format,
-        @NotNull @Size(max = 5) List<@NotNull @Valid OutputRequest> outputs) {
+        @NotNull @Size(max = 5) List<@NotNull @Valid OutputRequest> outputs,
+        // 스터디 소개(문단). 나중에 생긴 필드라 생략(null)도 받는다 — 빈 배열과 같다(소개 없음)
+        @Size(max = 10) List<@NotBlank @Size(max = 1000) String> description) {
 
     private static final String YEAR_MONTH_PATTERN = "^\\d{4}\\.(0[1-9]|1[0-2])$";
 

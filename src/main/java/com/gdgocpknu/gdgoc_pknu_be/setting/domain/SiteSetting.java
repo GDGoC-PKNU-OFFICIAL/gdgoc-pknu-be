@@ -19,7 +19,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 /**
- * 사이트 설정. 단일 행(`id = 1`, DB CHECK)이라 목록 · 삭제가 없다. 모집 상태 배너와 활동 통계 4개를 가진다.
+ * 사이트 설정. 단일 행(`id = 1`, DB CHECK)이라 목록 · 삭제가 없다. 모집 상태 · 기간과 활동 통계 4개를 가진다.
  * `created_at` 컬럼이 없어 {@code BaseTimeEntity}를 쓰지 않고 `updatedAt`만 직접 둔다.
  * 통계는 항상 정확히 4개(순서 1~4)이며, 수정은 행을 바꾸지 않고 값만 바꾼다.
  */
@@ -38,8 +38,6 @@ public class SiteSetting {
 
     private boolean recruiting;
 
-    private String bannerText;
-
     private LocalDate recruitStart;
 
     private LocalDate recruitEnd;
@@ -52,12 +50,12 @@ public class SiteSetting {
     @OrderBy("sortOrder ASC")
     private List<SiteStat> stats = new ArrayList<>();
 
-    public static SiteSetting create(boolean recruiting, String bannerText, LocalDate recruitStart,
-                                     LocalDate recruitEnd, List<StatValue> stats) {
+    public static SiteSetting create(boolean recruiting, LocalDate recruitStart, LocalDate recruitEnd,
+                                     List<StatValue> stats) {
         requireStatCount(stats);
         SiteSetting setting = new SiteSetting();
         setting.id = SINGLETON_ID;
-        setting.applyBanner(recruiting, bannerText, recruitStart, recruitEnd);
+        setting.applyRecruit(recruiting, recruitStart, recruitEnd);
         for (int i = 0; i < stats.size(); i++) {
             setting.stats.add(SiteStat.of(setting, i + 1, stats.get(i)));
         }
@@ -65,10 +63,9 @@ public class SiteSetting {
     }
 
     /** PUT 전체 필드 교체. 통계는 같은 순서의 칸마다 값만 바꾼다(행을 지우고 다시 넣지 않는다). */
-    public void update(boolean recruiting, String bannerText, LocalDate recruitStart, LocalDate recruitEnd,
-                       List<StatValue> stats) {
+    public void update(boolean recruiting, LocalDate recruitStart, LocalDate recruitEnd, List<StatValue> stats) {
         requireStatCount(stats);
-        applyBanner(recruiting, bannerText, recruitStart, recruitEnd);
+        applyRecruit(recruiting, recruitStart, recruitEnd);
         replaceStats(stats);
     }
 
@@ -87,9 +84,8 @@ public class SiteSetting {
         this.updatedAt = now;
     }
 
-    private void applyBanner(boolean recruiting, String bannerText, LocalDate recruitStart, LocalDate recruitEnd) {
+    private void applyRecruit(boolean recruiting, LocalDate recruitStart, LocalDate recruitEnd) {
         this.recruiting = recruiting;
-        this.bannerText = bannerText;
         this.recruitStart = recruitStart;
         this.recruitEnd = recruitEnd;
     }

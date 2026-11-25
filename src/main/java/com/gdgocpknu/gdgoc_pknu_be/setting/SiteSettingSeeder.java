@@ -26,8 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SiteSettingSeeder implements ApplicationRunner {
 
-    private static final String DEFAULT_BANNER_TEXT = "모집 일정이 정해지면 안내드릴게요.";
-
     private final SiteSettingRepository siteSettingRepository;
 
     @Override
@@ -36,16 +34,16 @@ public class SiteSettingSeeder implements ApplicationRunner {
         if (siteSettingRepository.existsById(SiteSetting.SINGLETON_ID)) {
             return;
         }
-        siteSettingRepository.save(SiteSetting.create(false, DEFAULT_BANNER_TEXT, null, null, defaultStats()));
+        siteSettingRepository.save(SiteSetting.create(false, null, null, defaultStats()));
         log.info("사이트 설정 기본 행을 생성했습니다. 관리자 화면에서 값을 수정하세요.");
     }
 
     /** 홈의 활동 통계 4칸(PRD 3-4). 숫자는 자리 표시용이며 관리자가 실제 값으로 바꾼다. */
     static List<StatValue> defaultStats() {
         return List.of(
-                new StatValue("운영 기수", 1, null, null),
-                new StatValue("누적 멤버", 0, null, null),
-                new StatValue("완료 프로젝트", 0, null, null),
-                new StatValue("세션·이벤트", 0, null, null));
+                new StatValue("운영 기수", 1),
+                new StatValue("누적 멤버", 0),
+                new StatValue("완료 프로젝트", 0),
+                new StatValue("세션·이벤트", 0));
     }
 }

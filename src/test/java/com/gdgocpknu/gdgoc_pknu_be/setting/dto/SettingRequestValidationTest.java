@@ -77,48 +77,41 @@ class SettingRequestValidationTest {
     @Test
     void 통계의_label은_필수이고_글자_수_제한을_넘으면_위반이다() {
         List<StatRequest> bad = new ArrayList<>(stats(2));
-        bad.add(new StatRequest("", 1, null, null));
-        bad.add(new StatRequest("가".repeat(21), 1, "가".repeat(11), "가".repeat(6)));
+        bad.add(new StatRequest("", 1));
+        bad.add(new StatRequest("가".repeat(21), 1));
 
         assertThat(fieldsOf(validator.validate(valid(r -> withStats(r, bad)))))
-                .containsExactlyInAnyOrder("stats[2].label", "stats[3].label", "stats[3].unit", "stats[3].suffix");
+                .containsExactlyInAnyOrder("stats[2].label", "stats[3].label");
     }
 
     @Test
     void 통계의_value는_필수이고_음수면_위반이며_0은_통과한다() {
         List<StatRequest> bad = new ArrayList<>(stats(2));
-        bad.add(new StatRequest("누적 멤버", null, null, null));
-        bad.add(new StatRequest("완료 프로젝트", -1, null, null));
+        bad.add(new StatRequest("누적 멤버", null));
+        bad.add(new StatRequest("완료 프로젝트", -1));
         assertThat(fieldsOf(validator.validate(valid(r -> withStats(r, bad)))))
                 .containsExactlyInAnyOrder("stats[2].value", "stats[3].value");
 
         List<StatRequest> zero = new ArrayList<>(stats(3));
-        zero.add(new StatRequest("완료 프로젝트", 0, null, null));
+        zero.add(new StatRequest("완료 프로젝트", 0));
         assertThat(validator.validate(valid(r -> withStats(r, zero)))).isEmpty();
     }
 
     @Test
     void 통계의_value는_상한까지만_통과하고_1만_넘어도_위반이다() {
         List<StatRequest> atLimit = new ArrayList<>(stats(3));
-        atLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE, null, null));
+        atLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE));
         assertThat(validator.validate(valid(r -> withStats(r, atLimit)))).isEmpty();
 
         List<StatRequest> overLimit = new ArrayList<>(stats(3));
-        overLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE + 1, null, null));
+        overLimit.add(new StatRequest("누적 멤버", SettingRequest.MAX_STAT_VALUE + 1));
         assertThat(fieldsOf(validator.validate(valid(r -> withStats(r, overLimit)))))
                 .containsExactly("stats[3].value");
     }
 
     @Test
-    void 배너_문구는_필수이고_60자_이하다() {
-        assertThat(fieldsOf(validator.validate(valid(r -> withBanner(r, ""))))).containsExactly("bannerText");
-        assertThat(fieldsOf(validator.validate(valid(r -> withBanner(r, "가".repeat(61)))))).containsExactly("bannerText");
-        assertThat(validator.validate(valid(r -> withBanner(r, "가".repeat(60))))).isEmpty();
-    }
-
-    @Test
     void 모집_상태가_없으면_위반이다() {
-        SettingRequest request = valid(r -> new SettingRequest(null, r.bannerText(), r.recruitPeriod(), r.stats()));
+        SettingRequest request = valid(r -> new SettingRequest(null, r.recruitPeriod(), r.stats()));
 
         assertThat(fieldsOf(validator.validate(request))).containsExactly("recruiting");
     }
@@ -128,28 +121,25 @@ class SettingRequestValidationTest {
     }
 
     private static SettingRequest withPeriod(SettingRequest r, RecruitPeriodRequest period) {
-        return new SettingRequest(r.recruiting(), r.bannerText(), period, r.stats());
+        return new SettingRequest(r.recruiting(), period, r.stats());
     }
 
     private static SettingRequest withStats(SettingRequest r, List<StatRequest> stats) {
-        return new SettingRequest(r.recruiting(), r.bannerText(), r.recruitPeriod(), stats);
+        return new SettingRequest(r.recruiting(), r.recruitPeriod(), stats);
     }
 
-    private static SettingRequest withBanner(SettingRequest r, String bannerText) {
-        return new SettingRequest(r.recruiting(), bannerText, r.recruitPeriod(), r.stats());
-    }
 
     private static List<StatRequest> stats(int count) {
         List<StatRequest> stats = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            stats.add(new StatRequest("통계" + i, i, null, null));
+            stats.add(new StatRequest("통계" + i, i));
         }
         return stats;
     }
 
     private static SettingRequest valid(UnaryOperator<SettingRequest> customizer) {
         return customizer.apply(new SettingRequest(
-                true, "2026년 2학기 신입 부원을 모집합니다",
+                true,
                 new RecruitPeriodRequest(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 14)),
                 stats(4)));
     }

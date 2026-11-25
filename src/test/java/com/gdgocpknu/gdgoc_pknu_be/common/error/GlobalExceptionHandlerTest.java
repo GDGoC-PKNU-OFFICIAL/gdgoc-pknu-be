@@ -119,7 +119,7 @@ class GlobalExceptionHandlerTest {
         mockMvc.perform(get("/sample/other-conflict"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("ck_member_status_role"))));
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("ck_member_status"))));
     }
 
     @Test
@@ -178,8 +178,8 @@ class GlobalExceptionHandlerTest {
         void otherConflict() {
             throw new DataIntegrityViolationException("could not execute statement", new ConstraintViolationException(
                     "could not execute statement",
-                    sqlException("new row violates check constraint \"ck_member_status_role\""),
-                    "ck_member_status_role"));
+                    sqlException("new row violates check constraint \"ck_member_status\""),
+                    "ck_member_status"));
         }
 
         @PostMapping("/sample/category")
